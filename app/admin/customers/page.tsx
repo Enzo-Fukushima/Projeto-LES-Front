@@ -124,9 +124,11 @@ export default function CustomersPage() {
                             Ver detalhes
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/customers/${customer.id}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleStatus(customer.id, customer.ativo)}>
                           {customer.ativo ? (
