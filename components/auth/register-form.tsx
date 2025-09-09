@@ -38,7 +38,7 @@ import {
 export function RegisterForm() {
   const [formData, setFormData] = useState({
     nome: "",
-    genero: "OUTRO",
+    genero: "",
     email: "",
     cpf: "",
     telefone: "",
@@ -47,9 +47,9 @@ export function RegisterForm() {
     confirmar_senha: "",
     endereco_cobranca: {
       cep: "",
-      tipoLogradouro: "RUA",
+      tipoLogradouro: "",
       tipoResidencia: "",
-      tipoEndereco: "",
+      tipoEndereco: "COBRANÇA",
       logradouro: "",
       numero: "",
       complemento: "",
@@ -60,9 +60,9 @@ export function RegisterForm() {
     },
     endereco_entrega: {
       cep: "",
-      tipoLogradouro: "RUA",
+      tipoLogradouro: "",
       tipoResidencia: "",
-      tipoEndereco: "",
+      tipoEndereco: "ENTREGA",
       logradouro: "",
       numero: "",
       complemento: "",
@@ -79,7 +79,6 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  
   // Formata CEP -> 12345-678
   const formatCEP = (value: string) => {
     return value
@@ -357,30 +356,28 @@ export function RegisterForm() {
                 />
               </div>
 
-             
-                <div className="space-y-2">
-                  <Label htmlFor="genero">Gênero *</Label>
-                  <Select
-                    value={formData.genero}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        genero: value, // agora atualiza o campo correto
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o gênero" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MASCULINO">Masculino</SelectItem>
-                      <SelectItem value="FEMININO">Feminino</SelectItem>
-                      <SelectItem value="OUTRO">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="genero">Gênero *</Label>
+                <Select
+                  value={formData.genero}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      genero: value, // agora atualiza o campo correto
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o gênero" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MASCULINO">Masculino</SelectItem>
+                    <SelectItem value="FEMININO">Feminino</SelectItem>
+                    <SelectItem value="OUTRO">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -444,12 +441,13 @@ export function RegisterForm() {
           <Separator />
 
           {/* Endereço de Cobrança */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               Endereço de Cobrança *
             </h3>
 
+            {/* Linha 1: CEP | Tipo Residência | Tipo Logradouro */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="endereco_cobranca.cep">CEP *</Label>
@@ -460,10 +458,37 @@ export function RegisterForm() {
                   onChange={handleChange}
                   placeholder="00000-000"
                   required
+                  className="w-full"
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="endereco_cobranca.tipoResidencia">
+                  Tipo Residência *
+                </Label>
+                <Select
+                  value={formData.endereco_cobranca.tipoResidencia || undefined}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      endereco_cobranca: {
+                        ...prev.endereco_cobranca,
+                        tipoResidencia: value,
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CASA">Casa</SelectItem>
+                    <SelectItem value="APARTAMENTO">Apartamento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="endereco_cobranca.tipoLogradouro">
                   Tipo Logradouro *
                 </Label>
@@ -494,21 +519,23 @@ export function RegisterForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="endereco_cobranca.logradouro">
-                  Logradouro *
-                </Label>
-                <Input
-                  id="endereco_cobranca.logradouro"
-                  name="endereco_cobranca.logradouro"
-                  value={formData.endereco_cobranca.logradouro}
-                  onChange={handleChange}
-                  placeholder="Rua, Avenida, etc."
-                  required
-                />
-              </div>
             </div>
 
+            {/* Linha 2: Logradouro */}
+            <div className="space-y-2">
+              <Label htmlFor="endereco_cobranca.logradouro">Logradouro *</Label>
+              <Input
+                id="endereco_cobranca.logradouro"
+                name="endereco_cobranca.logradouro"
+                value={formData.endereco_cobranca.logradouro}
+                onChange={handleChange}
+                placeholder="Rua, Avenida, etc."
+                required
+                className="w-full"
+              />
+            </div>
+
+            {/* Linha 3: Número | Complemento | Bairro */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="endereco_cobranca.numero">Número *</Label>
@@ -519,8 +546,10 @@ export function RegisterForm() {
                   onChange={handleChange}
                   placeholder="123"
                   required
+                  className="w-full"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="endereco_cobranca.complemento">
                   Complemento
@@ -531,8 +560,10 @@ export function RegisterForm() {
                   value={formData.endereco_cobranca.complemento}
                   onChange={handleChange}
                   placeholder="Apto, Sala"
+                  className="w-full"
                 />
               </div>
+
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="endereco_cobranca.bairro">Bairro *</Label>
                 <Input
@@ -542,11 +573,13 @@ export function RegisterForm() {
                   onChange={handleChange}
                   placeholder="Nome do bairro"
                   required
+                  className="w-full"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Linha 4: Cidade | Estado | País */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="endereco_cobranca.cidade">Cidade *</Label>
                 <Input
@@ -554,20 +587,9 @@ export function RegisterForm() {
                   name="endereco_cobranca.cidade"
                   value={formData.endereco_cobranca.cidade}
                   onChange={handleChange}
-                  placeholder="Nome da cidade"
+                  placeholder="Cidade"
                   required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endereco_cobranca.pais">País *</Label>
-                <Input
-                  id="endereco_cobranca.pais"
-                  name="endereco_cobranca.pais"
-                  value={formData.endereco_cobranca.pais}
-                  onChange={handleChange}
-                  placeholder="País"
-                  required
+                  className="w-full"
                 />
               </div>
 
@@ -580,6 +602,20 @@ export function RegisterForm() {
                   onChange={handleChange}
                   placeholder="SP"
                   required
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endereco_cobranca.pais">País *</Label>
+                <Input
+                  id="endereco_cobranca.pais"
+                  name="endereco_cobranca.pais"
+                  value={formData.endereco_cobranca.pais}
+                  onChange={handleChange}
+                  placeholder="País"
+                  required
+                  className="w-full"
                 />
               </div>
             </div>
@@ -587,8 +623,7 @@ export function RegisterForm() {
 
           <Separator />
 
-          {/* Endereço de Entrega */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -611,6 +646,7 @@ export function RegisterForm() {
 
             {!formData.mesmo_endereco && (
               <>
+                {/* Linha 1: CEP | Tipo Residência | Tipo Logradouro */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="endereco_entrega.cep">CEP *</Label>
@@ -621,15 +657,46 @@ export function RegisterForm() {
                       onChange={handleChange}
                       placeholder="00000-000"
                       required
+                      className="w-full"
                     />
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="endereco_entrega.tipoResidencia">
+                      Tipo Residência *
+                    </Label>
+                    <Select
+                      value={
+                        formData.endereco_entrega.tipoResidencia || undefined
+                      }
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          endereco_entrega: {
+                            ...prev.endereco_entrega,
+                            tipoResidencia: value,
+                          },
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CASA">Casa</SelectItem>
+                        <SelectItem value="APARTAMENTO">Apartamento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="endereco_entrega.tipoLogradouro">
                       Tipo Logradouro *
                     </Label>
                     <Select
-                      value={formData.endereco_entrega.tipoLogradouro}
+                      value={
+                        formData.endereco_entrega.tipoLogradouro || undefined
+                      }
                       onValueChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -655,22 +722,25 @@ export function RegisterForm() {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="endereco_entrega.logradouro">
-                      Logradouro *
-                    </Label>
-                    <Input
-                      id="endereco_entrega.logradouro"
-                      name="endereco_entrega.logradouro"
-                      value={formData.endereco_entrega.logradouro}
-                      onChange={handleChange}
-                      placeholder="Rua, Avenida, etc."
-                      required
-                    />
-                  </div>
                 </div>
 
+                {/* Linha 2: Logradouro */}
+                <div className="space-y-2">
+                  <Label htmlFor="endereco_entrega.logradouro">
+                    Logradouro *
+                  </Label>
+                  <Input
+                    id="endereco_entrega.logradouro"
+                    name="endereco_entrega.logradouro"
+                    value={formData.endereco_entrega.logradouro}
+                    onChange={handleChange}
+                    placeholder="Rua, Avenida, etc."
+                    required
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Linha 3: Número | Complemento | Bairro */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="endereco_entrega.numero">Número *</Label>
@@ -681,8 +751,10 @@ export function RegisterForm() {
                       onChange={handleChange}
                       placeholder="123"
                       required
+                      className="w-full"
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="endereco_entrega.complemento">
                       Complemento
@@ -693,8 +765,10 @@ export function RegisterForm() {
                       value={formData.endereco_entrega.complemento}
                       onChange={handleChange}
                       placeholder="Apto, Sala"
+                      className="w-full"
                     />
                   </div>
+
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="endereco_entrega.bairro">Bairro *</Label>
                     <Input
@@ -704,11 +778,13 @@ export function RegisterForm() {
                       onChange={handleChange}
                       placeholder="Nome do bairro"
                       required
+                      className="w-full"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Linha 4: Cidade | Estado | País */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="endereco_entrega.cidade">Cidade *</Label>
                     <Input
@@ -716,20 +792,9 @@ export function RegisterForm() {
                       name="endereco_entrega.cidade"
                       value={formData.endereco_entrega.cidade}
                       onChange={handleChange}
-                      placeholder="Nome da cidade"
+                      placeholder="Cidade"
                       required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="endereco_entrega.pais">País *</Label>
-                    <Input
-                      id="endereco_entrega.pais"
-                      name="endereco_entrega.pais"
-                      value={formData.endereco_entrega.pais}
-                      onChange={handleChange}
-                      placeholder="País"
-                      required
+                      className="w-full"
                     />
                   </div>
 
@@ -742,6 +807,20 @@ export function RegisterForm() {
                       onChange={handleChange}
                       placeholder="SP"
                       required
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endereco_entrega.pais">País *</Label>
+                    <Input
+                      id="endereco_entrega.pais"
+                      name="endereco_entrega.pais"
+                      value={formData.endereco_entrega.pais}
+                      onChange={handleChange}
+                      placeholder="País"
+                      required
+                      className="w-full"
                     />
                   </div>
                 </div>
