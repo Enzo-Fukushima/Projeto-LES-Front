@@ -529,34 +529,38 @@ export function RegisterForm() {
                       required
                     />
                   </div>
-                  
-                
-                  <Select
-                    value={formData.endereco_entrega.tipoLogradouro}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        endereco_entrega: {
-                          ...prev.endereco_entrega,
-                          tipoLogradouro: value,
-                        },
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="RUA">RUA</SelectItem>
-                      <SelectItem value="AVENIDA">AVENIDA</SelectItem>
-                      <SelectItem value="ALAMEDA">ALAMEDA</SelectItem>
-                      <SelectItem value="PRACA">PRAÇA</SelectItem>
-                      <SelectItem value="TRAVESSA">TRAVESSA</SelectItem>
-                      <SelectItem value="VIELA">VIELA</SelectItem>
-                      <SelectItem value="RODOVIA">RODOVIA</SelectItem>
-                      <SelectItem value="CAMINHO">CAMINHO</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="endereco_entrega.tipoLogradouro">
+                      Tipo Logradouro *
+                    </Label>
+                    <Select
+                      value={formData.endereco_entrega.tipoLogradouro}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          endereco_entrega: {
+                            ...prev.endereco_entrega,
+                            tipoLogradouro: value,
+                          },
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RUA">RUA</SelectItem>
+                        <SelectItem value="AVENIDA">AVENIDA</SelectItem>
+                        <SelectItem value="ALAMEDA">ALAMEDA</SelectItem>
+                        <SelectItem value="PRACA">PRAÇA</SelectItem>
+                        <SelectItem value="TRAVESSA">TRAVESSA</SelectItem>
+                        <SelectItem value="VIELA">VIELA</SelectItem>
+                        <SelectItem value="RODOVIA">RODOVIA</SelectItem>
+                        <SelectItem value="CAMINHO">CAMINHO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="endereco_entrega.logradouro">
