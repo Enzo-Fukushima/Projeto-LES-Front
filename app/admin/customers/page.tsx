@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { getAllUsers, searchUsers } from "@/lib/mock-data"
 import type { User } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,46 +10,84 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Search, MoreHorizontal, Eye, Edit, UserX, UserCheck } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { clientesService } from "@/services/ClienteService"
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<User[]>(getAllUsers())
+  const [customers, setCustomers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query)
-    if (query.trim() === "") {
-      setCustomers(getAllUsers())
-    } else {
-      setCustomers(searchUsers(query))
+  // Carregar clientes da API
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true)
+      const data = await clientesService.list()
+      console.log(data);
+      setCustomers(data)
+    } catch (error) {
+      toast({ title: "Erro", description: "Não foi possível carregar os clientes." })
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleToggleStatus = (customerId: string, currentStatus: boolean) => {
-    setCustomers((prev) =>
-      prev.map((customer) =>
-        customer.id === customerId ? { ...customer, ativo: !currentStatus, data_atualizacao: new Date() } : customer,
-      ),
-    )
+  useEffect(() => {
+    fetchCustomers()
+  }, [])
 
-    toast({
-      title: currentStatus ? "Cliente desativado" : "Cliente ativado",
-      description: `O status do cliente foi ${currentStatus ? "desativado" : "ativado"} com sucesso.`,
-    })
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query)
+    try {
+      setLoading(true)
+      if (query.trim() === "") {
+        await fetchCustomers()
+      } else {
+        // Se sua API tiver filtro por query, poderia ser algo tipo clientesService.search(query)
+        const all = await clientesService.list()
+        const filtered = all.filter(
+          (c: any) =>
+            c.nome.toLowerCase().includes(query.toLowerCase()) ||
+            c.email.toLowerCase().includes(query.toLowerCase()) ||
+            c.codigo_cliente.toString().includes(query)
+        )
+        setCustomers(filtered)
+      }
+    } catch (error) {
+      toast({ title: "Erro", description: "Não foi possível buscar os clientes." })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleToggleStatus = async (customerId: string, currentStatus: boolean) => {
+    try {
+      if (currentStatus) {
+        await clientesService.deactivate(Number(customerId))
+      } else {
+        await clientesService.activate(Number(customerId))
+      }
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c.id === customerId ? { ...c, ativo: !currentStatus, data_atualizacao: new Date() } : c
+        )
+      )
+      toast({
+        title: currentStatus ? "Cliente desativado" : "Cliente ativado",
+        description: `O status do cliente foi ${currentStatus ? "desativado" : "ativado"} com sucesso.`,
+      })
+    } catch (error) {
+      toast({ title: "Erro", description: "Não foi possível alterar o status do cliente." })
+    }
   }
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(date))
+    return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
+      new Date(date)
+    )
   }
 
-  const formatPhone = (phone?: string) => {
-    if (!phone) return "-"
-    return phone
-  }
+  const formatPhone = (phone?: string) => (phone ? phone : "-")
 
   return (
     <div className="space-y-6">
@@ -59,7 +96,6 @@ export default function CustomersPage() {
         <p className="text-muted-foreground">Gerencie os clientes cadastrados na loja</p>
       </div>
 
-      {/* Search and Filters */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -75,7 +111,6 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Customers Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -84,7 +119,6 @@ export default function CustomersPage() {
               <TableHead>Nome</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Telefone</TableHead>
-              <TableHead>Data Cadastro</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[70px]">Ações</TableHead>
             </TableRow>
@@ -103,7 +137,6 @@ export default function CustomersPage() {
                   <TableCell className="font-medium">{customer.nome}</TableCell>
                   <TableCell>{customer.email}</TableCell>
                   <TableCell>{formatPhone(customer.telefone)}</TableCell>
-                  <TableCell>{formatDate(customer.data_criacao)}</TableCell>
                   <TableCell>
                     <Badge variant={customer.ativo ? "default" : "secondary"}>
                       {customer.ativo ? "Ativo" : "Inativo"}
@@ -120,26 +153,22 @@ export default function CustomersPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/customers/${customer.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Ver detalhes
+                            <Eye className="mr-2 h-4 w-4" /> Ver detalhes
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/customers/${customer.id}/edit`}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
+                            <Edit className="mr-2 h-4 w-4" /> Editar
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleToggleStatus(customer.id, customer.ativo)}>
                           {customer.ativo ? (
                             <>
-                              <UserX className="mr-2 h-4 w-4" />
-                              Desativar
+                              <UserX className="mr-2 h-4 w-4" /> Desativar
                             </>
                           ) : (
                             <>
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              Ativar
+                              <UserCheck className="mr-2 h-4 w-4" /> Ativar
                             </>
                           )}
                         </DropdownMenuItem>
@@ -153,7 +182,6 @@ export default function CustomersPage() {
         </Table>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border p-4">
           <div className="text-2xl font-bold">{customers.filter((c) => c.ativo).length}</div>
