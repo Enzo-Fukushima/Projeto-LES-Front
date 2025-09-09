@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -25,7 +24,6 @@ import {
   ArrowLeft,
   BookOpen,
 } from "lucide-react";
-import { validatePassword } from "@/lib/utils/password";
 import { clientesService } from "@/services/ClienteService";
 import {
   Select,
@@ -34,8 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { validatePassword } from "@/lib/utils/password";
 
 export function RegisterForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     nome: "",
     genero: "",
@@ -47,9 +47,8 @@ export function RegisterForm() {
     confirmar_senha: "",
     endereco_cobranca: {
       cep: "",
-      tipoLogradouro: "",
       tipoResidencia: "",
-      tipoEndereco: "COBRANÇA",
+      tipoLogradouro: "",
       logradouro: "",
       numero: "",
       complemento: "",
@@ -57,12 +56,12 @@ export function RegisterForm() {
       cidade: "",
       estado: "",
       pais: "",
+      apelido: "",
     },
     endereco_entrega: {
       cep: "",
-      tipoLogradouro: "",
       tipoResidencia: "",
-      tipoEndereco: "ENTREGA",
+      tipoLogradouro: "",
       logradouro: "",
       numero: "",
       complemento: "",
@@ -70,105 +69,48 @@ export function RegisterForm() {
       cidade: "",
       estado: "",
       pais: "",
+      apelido: "",
     },
     mesmo_endereco: false,
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Formata CEP -> 12345-678
-  const formatCEP = (value: string) => {
-    return value
+  const formatCEP = (value: string) =>
+    value
       .replace(/\D/g, "")
       .replace(/(\d{5})(\d)/, "$1-$2")
-      .substring(0, 9); // limita em 9 caracteres
-  };
-
-  // Formata CPF -> 123.456.789-00
-  const formatCPF = (value: string) => {
-    return value
-      .replace(/\D/g, "") // remove não numéricos
+      .substring(0, 9);
+  const formatCPF = (value: string) =>
+    value
+      .replace(/\D/g, "")
       .replace(/(\d{3})(\d)/, "$1.$2")
       .replace(/(\d{3})(\d)/, "$1.$2")
       .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
-      .substring(0, 14); // limita em 14 caracteres
-  };
-
-  // Formata Telefone -> (11) 98765-4321
-  const formatPhone = (value: string) => {
-    return value
+      .substring(0, 14);
+  const formatPhone = (value: string) =>
+    value
       .replace(/\D/g, "")
       .replace(/^(\d{2})(\d)/, "($1) $2")
       .replace(/(\d{5})(\d)/, "$1-$2")
-      .substring(0, 15); // limita em 15 caracteres
-  };
+      .substring(0, 15);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
 
-    // CPF
     if (name === "cpf") {
-      setFormData((prev) => ({
-        ...prev,
-        cpf: formatCPF(value),
-      }));
+      setFormData((prev) => ({ ...prev, cpf: formatCPF(value) }));
       return;
     }
 
-    // Telefone
     if (name === "telefone") {
-      setFormData((prev) => ({
-        ...prev,
-        telefone: formatPhone(value),
-      }));
+      setFormData((prev) => ({ ...prev, telefone: formatPhone(value) }));
       return;
     }
 
-    // CEP cobrança
-    if (name === "endereco_cobranca.cep") {
-      setFormData((prev) => ({
-        ...prev,
-        endereco_cobranca: {
-          ...prev.endereco_cobranca,
-          cep: formatCEP(value),
-        },
-      }));
-      return;
-    }
-
-    // CEP entrega
-    if (name === "endereco_entrega.cep") {
-      setFormData((prev) => ({
-        ...prev,
-        endereco_entrega: {
-          ...prev.endereco_entrega,
-          cep: formatCEP(value),
-        },
-      }));
-      return;
-    }
-    if (name.startsWith("endereco_cobranca.")) {
-      const field = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        endereco_cobranca: { ...prev.endereco_cobranca, [field]: value },
-      }));
-      if (formData.mesmo_endereco) {
-        setFormData((prev) => ({
-          ...prev,
-          endereco_entrega: { ...prev.endereco_cobranca, [field]: value },
-        }));
-      }
-    } else if (name.startsWith("endereco_entrega.")) {
-      const field = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        endereco_entrega: { ...prev.endereco_entrega, [field]: value },
-      }));
-    } else if (name === "mesmo_endereco") {
+    if (name === "mesmo_endereco") {
       setFormData((prev) => ({
         ...prev,
         mesmo_endereco: checked,
@@ -176,12 +118,37 @@ export function RegisterForm() {
           ? { ...prev.endereco_cobranca }
           : { ...prev.endereco_entrega },
       }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      }));
+      return;
     }
+
+    // Campos de endereço
+    if (
+      name.startsWith("endereco_cobranca.") ||
+      name.startsWith("endereco_entrega.")
+    ) {
+      const [prefix, field] = name.split(".") as [
+        "endereco_cobranca" | "endereco_entrega",
+        string
+      ];
+      setFormData((prev) => {
+        const updated = { ...prev[prefix], [field]: value };
+        return {
+          ...prev,
+          [prefix]: updated,
+          endereco_entrega:
+            prev.mesmo_endereco && prefix === "endereco_cobranca"
+              ? { ...updated }
+              : prev.endereco_entrega,
+        };
+      });
+      return;
+    }
+
+    // Campos simples
+    setFormData((prev) => ({
+      ...prev,
+      [name as keyof typeof formData]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,34 +157,46 @@ export function RegisterForm() {
     setIsLoading(true);
 
     const newErrors: string[] = [];
-
     if (!formData.nome) newErrors.push("Nome é obrigatório");
     if (!formData.email) newErrors.push("Email é obrigatório");
     if (!formData.senha) newErrors.push("Senha é obrigatória");
 
     const endCob = formData.endereco_cobranca;
-    if (!endCob.cep) newErrors.push("CEP de cobrança é obrigatório");
-    if (!endCob.logradouro)
-      newErrors.push("Logradouro de cobrança é obrigatório");
-    if (!endCob.numero) newErrors.push("Número de cobrança é obrigatório");
-    if (!endCob.bairro) newErrors.push("Bairro de cobrança é obrigatório");
-    if (!endCob.cidade) newErrors.push("Cidade de cobrança é obrigatória");
-    if (!endCob.estado) newErrors.push("Estado de cobrança é obrigatório");
+    [
+      "cep",
+      "logradouro",
+      "numero",
+      "bairro",
+      "cidade",
+      "estado",
+      "pais",
+    ].forEach((f) => {
+      if (!endCob[f as keyof typeof endCob])
+        newErrors.push(
+          `${f.charAt(0).toUpperCase() + f.slice(1)} de cobrança é obrigatório`
+        );
+    });
 
     if (!formData.mesmo_endereco) {
       const endEnt = formData.endereco_entrega;
-      if (!endEnt.cep) newErrors.push("CEP de entrega é obrigatório");
-      if (!endEnt.logradouro)
-        newErrors.push("Logradouro de entrega é obrigatório");
-      if (!endEnt.numero) newErrors.push("Número de entrega é obrigatório");
-      if (!endEnt.bairro) newErrors.push("Bairro de entrega é obrigatório");
-      if (!endEnt.cidade) newErrors.push("Cidade de entrega é obrigatória");
-      if (!endEnt.estado) newErrors.push("Estado de entrega é obrigatório");
+      [
+        "cep",
+        "logradouro",
+        "numero",
+        "bairro",
+        "cidade",
+        "estado",
+        "pais",
+      ].forEach((f) => {
+        if (!endEnt[f as keyof typeof endEnt])
+          newErrors.push(
+            `${f.charAt(0).toUpperCase() + f.slice(1)} de entrega é obrigatório`
+          );
+      });
     }
 
-    const passwordValidation = validatePassword(formData.senha);
-    if (!passwordValidation.isValid)
-      newErrors.push(...passwordValidation.errors);
+    const pwdValidation = validatePassword(formData.senha);
+    if (!pwdValidation.isValid) newErrors.push(...pwdValidation.errors);
     if (formData.senha !== formData.confirmar_senha)
       newErrors.push("As senhas não coincidem");
 
@@ -230,8 +209,8 @@ export function RegisterForm() {
     try {
       const payload = {
         nome: formData.nome,
-        cpf: formData.cpf.replace(/\D/g, ""), // remove pontos e traço
-        genero: "OUTRO",
+        cpf: formData.cpf.replace(/\D/g, ""),
+        genero: formData.genero || "OUTRO",
         dataNascimento: formData.data_nascimento,
         email: formData.email,
         senha: formData.senha,
@@ -241,32 +220,36 @@ export function RegisterForm() {
         enderecos: [
           {
             ...formData.endereco_cobranca,
-            tipo: "COBRANCA",
-            observacoes: formData.endereco_cobranca.complemento || "-", // preencher observações
+            tipoEndereco: "COBRANCA",
+            apelido: formData.endereco_cobranca.apelido || "-",
+            estado: formData.endereco_cobranca.estado.toUpperCase(),
           },
           {
             ...(formData.mesmo_endereco
               ? formData.endereco_cobranca
               : formData.endereco_entrega),
-            tipo: "ENTREGA",
-            observacoes:
+            tipoEndereco: "ENTREGA",
+            apelido:
               (formData.mesmo_endereco
-                ? formData.endereco_cobranca.complemento
-                : formData.endereco_entrega.complemento) || "-", // preencher observações
+                ? formData.endereco_cobranca.apelido
+                : formData.endereco_entrega.apelido) || "-",
+            estado: (formData.mesmo_endereco
+              ? formData.endereco_cobranca.estado
+              : formData.endereco_entrega.estado
+            ).toUpperCase(),
           },
         ],
       };
+      console.log("Payload para registro:", payload); // Log do payload
 
       await clientesService.create(payload);
       router.push("/");
-    } catch (err) {
-      console.error(err);
+    } catch {
       setErrors(["Erro ao criar conta. Tente novamente."]);
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader className="text-center">
@@ -552,12 +535,12 @@ export function RegisterForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="endereco_cobranca.complemento">
-                  Complemento
+                  Apelido
                 </Label>
                 <Input
                   id="endereco_cobranca.complemento"
                   name="endereco_cobranca.complemento"
-                  value={formData.endereco_cobranca.complemento}
+                  value={formData.endereco_cobranca.apelido}
                   onChange={handleChange}
                   placeholder="Apto, Sala"
                   className="w-full"
