@@ -6,3 +6,4 @@ export const cartoesService = {
   create: async (payload: any) => (await api.post("/clientes/cartoes", payload)).data,
   remove: async (id: number) => (await api.delete(`/clientes/cartoes/${id}`)).status,
 };
+    

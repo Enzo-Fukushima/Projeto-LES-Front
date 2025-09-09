@@ -53,7 +53,8 @@ export default function CustomersPage() {
         const all = await clientesService.list()
         const filtered = all.filter((c: Cliente) =>
           c.nome.toLowerCase().includes(query.toLowerCase()) ||
-          c.email.toLowerCase().includes(query.toLowerCase())
+          c.email.toLowerCase().includes(query.toLowerCase()) ||
+          c.id.toString() === query
         )
         setCustomers(filtered)
       }
@@ -131,7 +132,7 @@ export default function CustomersPage() {
             ) : (
               customers.map((customer) => (
                 <TableRow key={customer.id}>
-                  <TableCell className="font-mono text-sm">{customer.codigo_cliente}</TableCell>
+                  <TableCell className="font-mono text-sm">{customer.id}</TableCell>
                   <TableCell className="font-medium">{customer.nome}</TableCell>
                   <TableCell>{customer.email}</TableCell>
                   <TableCell>{formatPhone(customer.telefone)}</TableCell>

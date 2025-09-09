@@ -1,50 +1,86 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { getUserById } from "@/lib/mock-data"
-import type { User } from "@/lib/types"
+import { clientesService } from "@/services/ClienteService"
+import type { ClienteUpdateDTO } from "@/lib/types"
 
-interface EditCustomerPageProps {
-  params: {
-    id: string
-  }
-}
-
-export default function EditCustomerPage({ params }: EditCustomerPageProps) {
+export default function EditCustomerPage() {
   const router = useRouter()
+  const params = useParams()
+  const clienteId = Number(params.id)
   const { toast } = useToast()
-  const [customer, setCustomer] = useState<User | null>(null)
+
+  const [cliente, setCliente] = useState<ClienteUpdateDTO | null>(null)
   const [loading, setLoading] = useState(true)
+  const [senhaConfirm, setSenhaConfirm] = useState("")
 
   useEffect(() => {
-    const user = getUserById(params.id)
-    setCustomer(user)
-    setLoading(false)
-  }, [params.id])
+    const fetchCliente = async () => {
+      try {
+        setLoading(true)
+        const data = await clientesService.get(clienteId)
+        setCliente({
+          id: data.id,
+          nome: data.nome,
+          cpf: data.cpf,
+          email: data.email,
+          senha: "",
+          tipoTelefone: data.tipoTelefone || "CELULAR",
+          ddd: data.ddd || "",
+          numeroTelefone: data.numeroTelefone || "",
+          ativo: data.ativo,
+          ranking: data.ranking || 0,
+        })
+      } catch {
+        toast({ title: "Erro", description: "Não foi possível carregar o cliente." })
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const handleSave = () => {
-    toast({
-      title: "Cliente atualizado",
-      description: "As informações do cliente foram atualizadas com sucesso.",
-    })
-    router.push(`/admin/customers/${params.id}`)
+    fetchCliente()
+  }, [clienteId])
+
+  const handleInputChange = (field: keyof ClienteUpdateDTO, value: string | boolean) => {
+    if (!cliente) return
+    setCliente({ ...cliente, [field]: value })
   }
 
-  const handleInputChange = (field: keyof User, value: string | boolean) => {
-    if (customer) {
-      setCustomer({
-        ...customer,
-        [field]: value,
-        data_atualizacao: new Date(),
+  const handleSave = async () => {
+    if (!cliente) return
+
+    if (cliente.senha && cliente.senha !== senhaConfirm) {
+      toast({ title: "Erro", description: "As senhas não coincidem." })
+      return
+    }
+
+    try {
+      setLoading(true)
+      const payload: ClienteUpdateDTO = { ...cliente }
+      if (!cliente.senha) {
+        delete payload.senha
+      }
+
+      await clientesService.update(cliente.id, payload)
+
+      toast({
+        title: "Cliente atualizado",
+        description: "As informações do cliente foram salvas com sucesso.",
       })
+      router.push(`/admin/customers/${cliente.id}`)
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível atualizar o cliente." })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -59,15 +95,13 @@ export default function EditCustomerPage({ params }: EditCustomerPageProps) {
     )
   }
 
-  if (!customer) {
+  if (!cliente) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Cliente não encontrado</h2>
-          <p className="text-muted-foreground mb-4">O cliente solicitado não foi encontrado.</p>
           <Button onClick={() => router.push("/admin/customers")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para Clientes
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Clientes
           </Button>
         </div>
       </div>
@@ -78,16 +112,16 @@ export default function EditCustomerPage({ params }: EditCustomerPageProps) {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
         </Button>
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Editar Cliente</h2>
-          <p className="text-muted-foreground">Edite as informações do cliente {customer.nome}</p>
+          <p className="text-muted-foreground">Edite as informações do cliente {cliente.nome}</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        {/* Informações Pessoais */}
         <Card>
           <CardHeader>
             <CardTitle>Informações Pessoais</CardTitle>
@@ -96,83 +130,96 @@ export default function EditCustomerPage({ params }: EditCustomerPageProps) {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome Completo</Label>
-              <Input id="nome" value={customer.nome} onChange={(e) => handleInputChange("nome", e.target.value)} />
+              <Input
+                id="nome"
+                value={cliente.nome}
+                onChange={(e) => handleInputChange("nome", e.target.value)}
+              />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                value={customer.email}
+                value={cliente.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                value={customer.telefone || ""}
-                onChange={(e) => handleInputChange("telefone", e.target.value)}
-                placeholder="(11) 99999-9999"
-              />
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2 col-span-1">
+                <Label htmlFor="ddd">DDD</Label>
+                <Input
+                  id="ddd"
+                  value={cliente.ddd}
+                  onChange={(e) => handleInputChange("ddd", e.target.value)}
+                  placeholder="11"
+                />
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="numeroTelefone">Telefone</Label>
+                <Input
+                  id="numeroTelefone"
+                  value={cliente.numeroTelefone}
+                  onChange={(e) => handleInputChange("numeroTelefone", e.target.value)}
+                  placeholder="99999-9999"
+                />
+              </div>
+
+              <div className="space-y-2 col-span-3">
+                <Label htmlFor="tipoTelefone">Tipo de Telefone</Label>
+                <Select
+                  value={cliente.tipoTelefone}
+                  onValueChange={(value) => handleInputChange("tipoTelefone", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CELULAR">Celular</SelectItem>
+                    <SelectItem value="RESIDENCIAL">Residencial</SelectItem>
+                    <SelectItem value="COMERCIAL">Comercial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="cpf">CPF</Label>
               <Input
+                disabled
                 id="cpf"
-                value={customer.cpf || ""}
+                value={cliente.cpf}
                 onChange={(e) => handleInputChange("cpf", e.target.value)}
-                placeholder="000.000.000-00"
               />
             </div>
           </CardContent>
         </Card>
 
+        {/* Configurações */}
         <Card>
           <CardHeader>
             <CardTitle>Configurações da Conta</CardTitle>
             <CardDescription>Status e configurações do cliente</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="codigo">Código do Cliente</Label>
-              <Input id="codigo" value={customer.codigo_cliente} disabled className="bg-muted" />
-              <p className="text-xs text-muted-foreground">O código do cliente não pode ser alterado</p>
-            </div>
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="ativo">Status da Conta</Label>
-                <p className="text-sm text-muted-foreground">{customer.ativo ? "Conta ativa" : "Conta inativa"}</p>
-              </div>
+              <Label>Status da Conta</Label>
               <Switch
-                id="ativo"
-                checked={customer.ativo}
+                checked={cliente.ativo}
                 onCheckedChange={(checked) => handleInputChange("ativo", checked)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Data de Cadastro</Label>
-              <p className="text-sm text-muted-foreground">
-                {new Intl.DateTimeFormat("pt-BR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }).format(new Date(customer.data_criacao))}
-              </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="flex justify-end gap-4">
-        <Button variant="outline" onClick={() => router.back()}>
-          Cancelar
-        </Button>
+        <Button variant="outline" onClick={() => router.back()}>Cancelar</Button>
         <Button onClick={handleSave}>
-          <Save className="mr-2 h-4 w-4" />
-          Salvar Alterações
+          <Save className="mr-2 h-4 w-4" /> Salvar Alterações
         </Button>
       </div>
     </div>

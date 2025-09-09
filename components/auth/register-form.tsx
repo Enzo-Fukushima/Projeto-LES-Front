@@ -1,24 +1,38 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/contexts/auth-context"
-import { validatePassword } from "@/lib/utils/password"
-import { Eye, EyeOff, Loader2, MapPin, CreditCard, ArrowLeft, BookOpen } from "lucide-react"
+import type React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  MapPin,
+  CreditCard,
+  ArrowLeft,
+  BookOpen,
+} from "lucide-react";
+import { validatePassword } from "@/lib/utils/password";
+import { clientesService } from "@/services/ClienteService";
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
+    cpf: "",
     telefone: "",
     data_nascimento: "",
     senha: "",
@@ -31,6 +45,7 @@ export function RegisterForm() {
       bairro: "",
       cidade: "",
       estado: "",
+      pais: "",
     },
     endereco_entrega: {
       cep: "",
@@ -40,106 +55,135 @@ export function RegisterForm() {
       bairro: "",
       cidade: "",
       estado: "",
+      pais: "",
     },
     mesmo_endereco: false,
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [errors, setErrors] = useState<string[]>([])
-  const { register, isLoading } = useAuth()
-  const router = useRouter()
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
+    const { name, value, type, checked } = e.target;
 
     if (name.startsWith("endereco_cobranca.")) {
-      const field = name.split(".")[1]
+      const field = name.split(".")[1];
       setFormData((prev) => ({
         ...prev,
-        endereco_cobranca: {
-          ...prev.endereco_cobranca,
-          [field]: value,
-        },
-      }))
+        endereco_cobranca: { ...prev.endereco_cobranca, [field]: value },
+      }));
+      if (formData.mesmo_endereco) {
+        setFormData((prev) => ({
+          ...prev,
+          endereco_entrega: { ...prev.endereco_cobranca, [field]: value },
+        }));
+      }
     } else if (name.startsWith("endereco_entrega.")) {
-      const field = name.split(".")[1]
+      const field = name.split(".")[1];
       setFormData((prev) => ({
         ...prev,
-        endereco_entrega: {
-          ...prev.endereco_entrega,
-          [field]: value,
-        },
-      }))
+        endereco_entrega: { ...prev.endereco_entrega, [field]: value },
+      }));
     } else if (name === "mesmo_endereco") {
       setFormData((prev) => ({
         ...prev,
         mesmo_endereco: checked,
-        endereco_entrega: checked ? prev.endereco_cobranca : prev.endereco_entrega,
-      }))
+        endereco_entrega: checked
+          ? { ...prev.endereco_cobranca }
+          : { ...prev.endereco_entrega },
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
         [name]: type === "checkbox" ? checked : value,
-      }))
+      }));
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrors([])
+    e.preventDefault();
+    setErrors([]);
+    setIsLoading(true);
 
-    // Validate required fields
-    const newErrors: string[] = []
-    if (!formData.nome) newErrors.push("Nome é obrigatório")
-    if (!formData.email) newErrors.push("Email é obrigatório")
-    if (!formData.senha) newErrors.push("Senha é obrigatória")
+    const newErrors: string[] = [];
 
-    if (!formData.endereco_cobranca.cep) newErrors.push("CEP de cobrança é obrigatório")
-    if (!formData.endereco_cobranca.logradouro) newErrors.push("Logradouro de cobrança é obrigatório")
-    if (!formData.endereco_cobranca.numero) newErrors.push("Número de cobrança é obrigatório")
-    if (!formData.endereco_cobranca.bairro) newErrors.push("Bairro de cobrança é obrigatório")
-    if (!formData.endereco_cobranca.cidade) newErrors.push("Cidade de cobrança é obrigatória")
-    if (!formData.endereco_cobranca.estado) newErrors.push("Estado de cobrança é obrigatório")
+    if (!formData.nome) newErrors.push("Nome é obrigatório");
+    if (!formData.email) newErrors.push("Email é obrigatório");
+    if (!formData.senha) newErrors.push("Senha é obrigatória");
+
+    const endCob = formData.endereco_cobranca;
+    if (!endCob.cep) newErrors.push("CEP de cobrança é obrigatório");
+    if (!endCob.logradouro)
+      newErrors.push("Logradouro de cobrança é obrigatório");
+    if (!endCob.numero) newErrors.push("Número de cobrança é obrigatório");
+    if (!endCob.bairro) newErrors.push("Bairro de cobrança é obrigatório");
+    if (!endCob.cidade) newErrors.push("Cidade de cobrança é obrigatória");
+    if (!endCob.estado) newErrors.push("Estado de cobrança é obrigatório");
 
     if (!formData.mesmo_endereco) {
-      if (!formData.endereco_entrega.cep) newErrors.push("CEP de entrega é obrigatório")
-      if (!formData.endereco_entrega.logradouro) newErrors.push("Logradouro de entrega é obrigatório")
-      if (!formData.endereco_entrega.numero) newErrors.push("Número de entrega é obrigatório")
-      if (!formData.endereco_entrega.bairro) newErrors.push("Bairro de entrega é obrigatório")
-      if (!formData.endereco_entrega.cidade) newErrors.push("Cidade de entrega é obrigatória")
-      if (!formData.endereco_entrega.estado) newErrors.push("Estado de entrega é obrigatório")
+      const endEnt = formData.endereco_entrega;
+      if (!endEnt.cep) newErrors.push("CEP de entrega é obrigatório");
+      if (!endEnt.logradouro)
+        newErrors.push("Logradouro de entrega é obrigatório");
+      if (!endEnt.numero) newErrors.push("Número de entrega é obrigatório");
+      if (!endEnt.bairro) newErrors.push("Bairro de entrega é obrigatório");
+      if (!endEnt.cidade) newErrors.push("Cidade de entrega é obrigatória");
+      if (!endEnt.estado) newErrors.push("Estado de entrega é obrigatório");
     }
 
-    // Validate password strength (RNF requirement)
-    const passwordValidation = validatePassword(formData.senha)
-    if (!passwordValidation.isValid) {
-      newErrors.push(...passwordValidation.errors)
-    }
-
-    // Validate password confirmation (RNF requirement)
-    if (formData.senha !== formData.confirmar_senha) {
-      newErrors.push("As senhas não coincidem")
-    }
+    const passwordValidation = validatePassword(formData.senha);
+    if (!passwordValidation.isValid)
+      newErrors.push(...passwordValidation.errors);
+    if (formData.senha !== formData.confirmar_senha)
+      newErrors.push("As senhas não coincidem");
 
     if (newErrors.length > 0) {
-      setErrors(newErrors)
-      return
+      setErrors(newErrors);
+      setIsLoading(false);
+      return;
     }
 
-    const success = await register({
-      nome: formData.nome,
-      email: formData.email,
-      telefone: formData.telefone,
-      data_nascimento: formData.data_nascimento,
-      senha_hash: formData.senha, // Will be hashed in the register function
-    })
+    try {
+      const payload = {
+        nome: formData.nome,
+        cpf: formData.cpf.replace(/\D/g, ""), // remove pontos e traço
+        genero: "OUTRO",
+        dataNascimento: formData.data_nascimento,
+        email: formData.email,
+        senha: formData.senha,
+        tipoTelefone: "CELULAR",
+        ddd: formData.telefone.replace(/\D/g, "").slice(0, 2),
+        numeroTelefone: formData.telefone.replace(/\D/g, "").slice(2),
+        enderecos: [
+          {
+            ...formData.endereco_cobranca,
+            tipo: "COBRANCA",
+            observacoes: formData.endereco_cobranca.complemento || "-", // preencher observações
+          },
+          {
+            ...(formData.mesmo_endereco
+              ? formData.endereco_cobranca
+              : formData.endereco_entrega),
+            tipo: "ENTREGA",
+            observacoes:
+              (formData.mesmo_endereco
+                ? formData.endereco_cobranca.complemento
+                : formData.endereco_entrega.complemento) || "-", // preencher observações
+          },
+        ],
+      };
 
-    if (success) {
-      router.push("/")
-    } else {
-      setErrors(["Erro ao criar conta. Tente novamente."])
+      await clientesService.create(payload);
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      setErrors(["Erro ao criar conta. Tente novamente."]);
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -157,11 +201,12 @@ export function RegisterForm() {
           </Link>
         </div>
         <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
-        <CardDescription>Crie sua conta para começar a comprar livros</CardDescription>
+        <CardDescription>
+          Crie sua conta para começar a comprar livros
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Personal Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informações Pessoais</h3>
 
@@ -207,6 +252,18 @@ export function RegisterForm() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  name="cpf"
+                  type="text"
+                  value={formData.cpf}
+                  onChange={handleChange}
+                  placeholder="123.456.789-00"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="data_nascimento">Data de Nascimento</Label>
                 <Input
                   id="data_nascimento"
@@ -238,7 +295,11 @@ export function RegisterForm() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -262,7 +323,11 @@ export function RegisterForm() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -271,6 +336,7 @@ export function RegisterForm() {
 
           <Separator />
 
+          {/* Endereço de Cobrança */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
@@ -290,7 +356,9 @@ export function RegisterForm() {
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="endereco_cobranca.logradouro">Logradouro *</Label>
+                <Label htmlFor="endereco_cobranca.logradouro">
+                  Logradouro *
+                </Label>
                 <Input
                   id="endereco_cobranca.logradouro"
                   name="endereco_cobranca.logradouro"
@@ -315,7 +383,9 @@ export function RegisterForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endereco_cobranca.complemento">Complemento</Label>
+                <Label htmlFor="endereco_cobranca.complemento">
+                  Complemento
+                </Label>
                 <Input
                   id="endereco_cobranca.complemento"
                   name="endereco_cobranca.complemento"
@@ -349,6 +419,19 @@ export function RegisterForm() {
                   required
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endereco_cobranca.pais">País *</Label>
+                <Input
+                  id="endereco_cobranca.pais"
+                  name="endereco_cobranca.pais"
+                  value={formData.endereco_cobranca.pais}
+                  onChange={handleChange}
+                  placeholder="País"
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="endereco_cobranca.estado">Estado *</Label>
                 <Input
@@ -365,6 +448,7 @@ export function RegisterForm() {
 
           <Separator />
 
+          {/* Endereço de Entrega */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -401,7 +485,9 @@ export function RegisterForm() {
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="endereco_entrega.logradouro">Logradouro *</Label>
+                    <Label htmlFor="endereco_entrega.logradouro">
+                      Logradouro *
+                    </Label>
                     <Input
                       id="endereco_entrega.logradouro"
                       name="endereco_entrega.logradouro"
@@ -426,7 +512,9 @@ export function RegisterForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endereco_entrega.complemento">Complemento</Label>
+                    <Label htmlFor="endereco_entrega.complemento">
+                      Complemento
+                    </Label>
                     <Input
                       id="endereco_entrega.complemento"
                       name="endereco_entrega.complemento"
@@ -460,6 +548,19 @@ export function RegisterForm() {
                       required
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="endereco_entrega.pais">País *</Label>
+                    <Input
+                      id="endereco_entrega.pais"
+                      name="endereco_entrega.pais"
+                      value={formData.endereco_entrega.pais}
+                      onChange={handleChange}
+                      placeholder="País"
+                      required
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="endereco_entrega.estado">Estado *</Label>
                     <Input
@@ -503,16 +604,20 @@ export function RegisterForm() {
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Já tem uma conta?{" "}
-            <Link href="/login" className="text-primary hover:underline font-medium">
+            <Link
+              href="/login"
+              className="text-primary hover:underline font-medium"
+            >
               Fazer login
             </Link>
           </p>
         </div>
 
         <div className="mt-4 text-center text-sm text-muted-foreground">
-          <p>A senha deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas e caracteres especiais.</p>
+          Ao criar uma conta, você concorda com nossos termos de uso e política
+          de privacidade.
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
