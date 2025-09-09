@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import type { User } from "@/lib/types"
+import type { Cliente } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { clientesService } from "@/services/ClienteService"
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<User[]>([])
+  const [customers, setCustomers] = useState<Cliente[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
@@ -22,9 +22,16 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true)
-      const data = await clientesService.list()
-      console.log(data);
-      setCustomers(data)
+      const response = await clientesService.list()
+      const clientes = Array.isArray(response) ? response : response.data
+
+      // Montar telefone
+      const clientesComTelefone: Cliente[] = clientes.map((c: Cliente) => ({
+        ...c,
+        telefone: c.ddd && c.numeroTelefone ? `(${c.ddd}) ${c.numeroTelefone}` : "-"
+      }))
+
+      setCustomers(clientesComTelefone)
     } catch (error) {
       toast({ title: "Erro", description: "Não foi possível carregar os clientes." })
     } finally {
@@ -43,13 +50,10 @@ export default function CustomersPage() {
       if (query.trim() === "") {
         await fetchCustomers()
       } else {
-        // Se sua API tiver filtro por query, poderia ser algo tipo clientesService.search(query)
         const all = await clientesService.list()
-        const filtered = all.filter(
-          (c: any) =>
-            c.nome.toLowerCase().includes(query.toLowerCase()) ||
-            c.email.toLowerCase().includes(query.toLowerCase()) ||
-            c.codigo_cliente.toString().includes(query)
+        const filtered = all.filter((c: Cliente) =>
+          c.nome.toLowerCase().includes(query.toLowerCase()) ||
+          c.email.toLowerCase().includes(query.toLowerCase())
         )
         setCustomers(filtered)
       }
@@ -60,16 +64,16 @@ export default function CustomersPage() {
     }
   }
 
-  const handleToggleStatus = async (customerId: string, currentStatus: boolean) => {
+  const handleToggleStatus = async (customerId: number, currentStatus: boolean) => {
     try {
       if (currentStatus) {
-        await clientesService.deactivate(Number(customerId))
+        await clientesService.deactivate(customerId)
       } else {
-        await clientesService.activate(Number(customerId))
+        await clientesService.activate(customerId)
       }
       setCustomers((prev) =>
         prev.map((c) =>
-          c.id === customerId ? { ...c, ativo: !currentStatus, data_atualizacao: new Date() } : c
+          c.id === customerId ? { ...c, ativo: !currentStatus } : c
         )
       )
       toast({
@@ -81,13 +85,7 @@ export default function CustomersPage() {
     }
   }
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
-      new Date(date)
-    )
-  }
-
-  const formatPhone = (phone?: string) => (phone ? phone : "-")
+  const formatPhone = (phone?: string) => phone ?? "-"
 
   return (
     <div className="space-y-6">
@@ -126,7 +124,7 @@ export default function CustomersPage() {
           <TableBody>
             {customers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Nenhum cliente encontrado.
                 </TableCell>
               </TableRow>
