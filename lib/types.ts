@@ -10,7 +10,7 @@ export interface Endereco {
   tipoEndereco: "ENTREGA" | "COBRANCA";
   logradouro: string;
   numero: string;
-  complemento?: string;
+  apelido?: string;
   bairro: string;
   cidade: string;
   estado: string;
@@ -59,6 +59,7 @@ export type ClienteUpdateDTO = {
 
 export interface CreateClienteEnderecoDTO {
   cep: string;
+  apelido?: string;
   logradouro: string;
   numero: string;
   complemento?: string;
@@ -95,7 +96,7 @@ export interface EnderecoDTO {
   cidade: string;
   estado: string;
   pais?: string;
-  observacoes?: string;
+  apelido?: string;
 }
 
 export interface CartaoCreditoDTO {

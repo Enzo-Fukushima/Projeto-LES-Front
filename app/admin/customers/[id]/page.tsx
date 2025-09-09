@@ -181,6 +181,9 @@ export default function CustomerDetailPage() {
                   {customer.enderecos.map((endereco) => (
                     <div key={endereco.id} className="p-2 border rounded">
                       <p>
+                        {endereco.apelido}
+                      </p>
+                      <p>
                         {endereco.logradouro}, {endereco.numero} -{" "}
                         {endereco.bairro}
                       </p>
