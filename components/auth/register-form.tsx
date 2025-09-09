@@ -51,7 +51,6 @@ export function RegisterForm() {
       tipoLogradouro: "",
       logradouro: "",
       numero: "",
-      complemento: "",
       bairro: "",
       cidade: "",
       estado: "",
@@ -64,7 +63,6 @@ export function RegisterForm() {
       tipoLogradouro: "",
       logradouro: "",
       numero: "",
-      complemento: "",
       bairro: "",
       cidade: "",
       estado: "",
@@ -534,15 +532,15 @@ export function RegisterForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="endereco_cobranca.complemento">
+                <Label htmlFor="endereco_cobranca.apelido">
                   Apelido
                 </Label>
                 <Input
-                  id="endereco_cobranca.complemento"
-                  name="endereco_cobranca.complemento"
+                  id="endereco_cobranca.apelido"
+                  name="endereco_cobranca.apelido"
                   value={formData.endereco_cobranca.apelido}
                   onChange={handleChange}
-                  placeholder="Apto, Sala"
+                  placeholder="Ex: Casa, Trabalho, etc."
                   className="w-full"
                 />
               </div>
@@ -739,15 +737,15 @@ export function RegisterForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="endereco_entrega.complemento">
-                      Complemento
+                    <Label htmlFor="endereco_entrega.apelido">
+                      Apelido
                     </Label>
                     <Input
-                      id="endereco_entrega.complemento"
-                      name="endereco_entrega.complemento"
-                      value={formData.endereco_entrega.complemento}
+                      id="endereco_entrega.apelido"
+                      name="endereco_entrega.apelido"
+                      value={formData.endereco_entrega.apelido}
                       onChange={handleChange}
-                      placeholder="Apto, Sala"
+                      placeholder="Ex: Casa, Trabalho, etc."
                       className="w-full"
                     />
                   </div>
