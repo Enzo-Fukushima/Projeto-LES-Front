@@ -79,9 +79,78 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  
+  // Formata CEP -> 12345-678
+  const formatCEP = (value: string) => {
+    return value
+      .replace(/\D/g, "")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .substring(0, 9); // limita em 9 caracteres
+  };
+
+  // Formata CPF -> 123.456.789-00
+  const formatCPF = (value: string) => {
+    return value
+      .replace(/\D/g, "") // remove não numéricos
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+      .substring(0, 14); // limita em 14 caracteres
+  };
+
+  // Formata Telefone -> (11) 98765-4321
+  const formatPhone = (value: string) => {
+    return value
+      .replace(/\D/g, "")
+      .replace(/^(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{5})(\d)/, "$1-$2")
+      .substring(0, 15); // limita em 15 caracteres
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
 
+    // CPF
+    if (name === "cpf") {
+      setFormData((prev) => ({
+        ...prev,
+        cpf: formatCPF(value),
+      }));
+      return;
+    }
+
+    // Telefone
+    if (name === "telefone") {
+      setFormData((prev) => ({
+        ...prev,
+        telefone: formatPhone(value),
+      }));
+      return;
+    }
+
+    // CEP cobrança
+    if (name === "endereco_cobranca.cep") {
+      setFormData((prev) => ({
+        ...prev,
+        endereco_cobranca: {
+          ...prev.endereco_cobranca,
+          cep: formatCEP(value),
+        },
+      }));
+      return;
+    }
+
+    // CEP entrega
+    if (name === "endereco_entrega.cep") {
+      setFormData((prev) => ({
+        ...prev,
+        endereco_entrega: {
+          ...prev.endereco_entrega,
+          cep: formatCEP(value),
+        },
+      }));
+      return;
+    }
     if (name.startsWith("endereco_cobranca.")) {
       const field = name.split(".")[1];
       setFormData((prev) => ({
