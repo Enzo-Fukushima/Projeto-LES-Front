@@ -53,11 +53,6 @@ const sidebarItems = [
     href: "/admin/reports",
     icon: BarChart3,
   },
-  {
-    title: "Configurações",
-    href: "/admin/settings",
-    icon: Settings,
-  },
 ]
 
 export function AdminSidebar() {
