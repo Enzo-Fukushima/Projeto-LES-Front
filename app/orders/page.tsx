@@ -5,10 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { mockOrders, mockOrderItems, getBookById } from "@/lib/mock-data"
-import { ArrowLeft, Package } from "lucide-react"
+import { ArrowLeft, Package, RefreshCw } from "lucide-react"
+import { useState } from "react"
+import { ExchangeRequestDialog } from "@/components/exchange-request-dialog"
 
 export default function OrdersPage() {
   const { user } = useAuth()
+  const [selectedOrderForExchange, setSelectedOrderForExchange] = useState<string | null>(null)
 
   if (!user) {
     return (
@@ -48,6 +51,12 @@ export default function OrdersPage() {
         return "outline"
       case "cancelado":
         return "destructive"
+      case "em_troca":
+        return "outline"
+      case "troca_autorizada":
+        return "secondary"
+      case "troca_recebida":
+        return "default"
       default:
         return "outline"
     }
@@ -63,6 +72,12 @@ export default function OrdersPage() {
         return "Processando"
       case "cancelado":
         return "Cancelado"
+      case "em_troca":
+        return "Em Troca"
+      case "troca_autorizada":
+        return "Troca Autorizada"
+      case "troca_recebida":
+        return "Troca Recebida"
       default:
         return status
     }
@@ -70,6 +85,13 @@ export default function OrdersPage() {
 
   const getOrderItems = (orderId: string) => {
     return mockOrderItems.filter((item) => item.order_id === orderId)
+  }
+
+  const canRequestExchange = (order: any) => {
+    return (
+      order.status === "entregue" &&
+      new Date().getTime() - new Date(order.data_entrega).getTime() <= 30 * 24 * 60 * 60 * 1000
+    ) // 30 days
   }
 
   return (
@@ -111,7 +133,15 @@ export default function OrdersPage() {
                       <Package className="h-5 w-5" />
                       Pedido {order.codigo_pedido}
                     </CardTitle>
-                    <Badge variant={getStatusColor(order.status)}>{getStatusLabel(order.status)}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getStatusColor(order.status)}>{getStatusLabel(order.status)}</Badge>
+                      {canRequestExchange(order) && (
+                        <Button variant="outline" size="sm" onClick={() => setSelectedOrderForExchange(order.id)}>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Solicitar Troca
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>Pedido em: {formatDate(order.data_pedido)}</span>
@@ -176,6 +206,10 @@ export default function OrdersPage() {
             )
           })}
         </div>
+      )}
+
+      {selectedOrderForExchange && (
+        <ExchangeRequestDialog orderId={selectedOrderForExchange} onClose={() => setSelectedOrderForExchange(null)} />
       )}
     </div>
   )

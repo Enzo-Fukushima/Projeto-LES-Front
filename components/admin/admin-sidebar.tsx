@@ -4,7 +4,18 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, BookOpen, ArrowLeft } from "lucide-react"
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  Users,
+  BarChart3,
+  Settings,
+  BookOpen,
+  ArrowLeft,
+  RefreshCw,
+  Gift,
+} from "lucide-react"
 
 const sidebarItems = [
   {
@@ -23,6 +34,16 @@ const sidebarItems = [
     icon: ShoppingCart,
   },
   {
+    title: "Trocas",
+    href: "/admin/exchanges",
+    icon: RefreshCw,
+  },
+  {
+    title: "Cupons",
+    href: "/admin/coupons",
+    icon: Gift,
+  },
+  {
     title: "Clientes",
     href: "/admin/customers",
     icon: Users,
@@ -32,7 +53,11 @@ const sidebarItems = [
     href: "/admin/reports",
     icon: BarChart3,
   },
-  
+  {
+    title: "Configurações",
+    href: "/admin/settings",
+    icon: Settings,
+  },
 ]
 
 export function AdminSidebar() {

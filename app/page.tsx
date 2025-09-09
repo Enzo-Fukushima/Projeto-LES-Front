@@ -53,21 +53,21 @@ export default function HomePage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <BookOpen className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">Catálogo Completo</h3>
+                <h3 className="font-semibold text-lg mb-2 text-black dark:text-white">Catálogo Completo</h3>
                 <p className="text-muted-foreground">Milhares de títulos de todas as categorias e gêneros</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6 text-center">
                 <Star className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">IA Personalizada</h3>
+                <h3 className="font-semibold text-lg mb-2 text-black dark:text-white">IA Personalizada</h3>
                 <p className="text-muted-foreground">Recomendações inteligentes baseadas no seu perfil de leitura</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6 text-center">
                 <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">Entrega Rápida</h3>
+                <h3 className="font-semibold text-lg mb-2 text-black dark:text-white">Entrega Rápida</h3>
                 <p className="text-muted-foreground">Frete calculado automaticamente e entrega em todo o Brasil</p>
               </CardContent>
             </Card>

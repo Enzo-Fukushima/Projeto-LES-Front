@@ -7,18 +7,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { mockOrders } from "@/lib/mock-data"
-import { Search, Eye, ShoppingCart } from "lucide-react"
+import { Search, Eye, ShoppingCart, Package, MoreHorizontal, CheckCircle, Clock, Truck, XCircle } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AdminOrders() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [orders, setOrders] = useState(mockOrders)
+  const { toast } = useToast()
 
-  const filteredOrders = mockOrders.filter((order) => {
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch = order.codigo_pedido.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || order.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  const handleStatusChange = (orderId: string, newStatus: string) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) => {
+        if (order.id === orderId) {
+          const updatedOrder = { ...order, status: newStatus as any }
+
+          if (newStatus === "enviado" && !order.codigo_rastreamento) {
+            updatedOrder.codigo_rastreamento = `BR${Math.random().toString().slice(2, 11)}`
+            updatedOrder.data_envio = new Date()
+          }
+
+          if (newStatus === "entregue" && !order.data_entrega) {
+            updatedOrder.data_entrega = new Date()
+          }
+
+          return updatedOrder
+        }
+        return order
+      }),
+    )
+
+    toast({
+      title: "Status do pedido atualizado",
+      description: `O pedido foi marcado como ${getStatusLabel(newStatus).toLowerCase()}.`,
+    })
+  }
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -132,7 +163,33 @@ export default function AdminOrders() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(order.status)}>{getStatusLabel(order.status)}</Badge>
+                      <Select
+                        value={order.status}
+                        onValueChange={(newStatus) => handleStatusChange(order.id, newStatus)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue>
+                            <Badge variant={getStatusColor(order.status)}>{getStatusLabel(order.status)}</Badge>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pendente">
+                            <Badge variant="outline">Pendente</Badge>
+                          </SelectItem>
+                          <SelectItem value="processando">
+                            <Badge variant="outline">Processando</Badge>
+                          </SelectItem>
+                          <SelectItem value="enviado">
+                            <Badge variant="secondary">Enviado</Badge>
+                          </SelectItem>
+                          <SelectItem value="entregue">
+                            <Badge variant="default">Entregue</Badge>
+                          </SelectItem>
+                          <SelectItem value="cancelado">
+                            <Badge variant="destructive">Cancelado</Badge>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>{formatPrice(order.valor_total)}</TableCell>
                     <TableCell>
@@ -143,9 +200,42 @@ export default function AdminOrders() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ver detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusChange(order.id, "processando")}>
+                            <Clock className="mr-2 h-4 w-4" />
+                            Marcar como Processando
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusChange(order.id, "enviado")}>
+                            <Truck className="mr-2 h-4 w-4" />
+                            Marcar como Enviado
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusChange(order.id, "entregue")}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Marcar como Entregue
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusChange(order.id, "cancelado")}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Cancelar Pedido
+                          </DropdownMenuItem>
+                          {order.status === "enviado" && !order.codigo_rastreamento && (
+                            <DropdownMenuItem onClick={() => handleStatusChange(order.id, "enviado")}>
+                              <Package className="mr-2 h-4 w-4" />
+                              Gerar Código de Rastreamento
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}

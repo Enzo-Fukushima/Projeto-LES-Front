@@ -1,5 +1,5 @@
 // Mock data for the bookstore prototype
-import type { Book, Category, User, Stock, Order, OrderItem, Address, PaymentCard } from "./types"
+import type { Book, Category, User, Stock, Order, OrderItem, Address, PaymentCard, Coupon } from "./types"
 
 export const mockCategories: Category[] = [
   { id: "1", nome: "Ficção", descricao: "Romances e ficção literária", ativo: true },
@@ -15,78 +15,78 @@ export const mockBooks: Book[] = [
     isbn: "978-85-250-4815-7",
     titulo: "Dom Casmurro",
     autor: "Machado de Assis",
-    editora: "Principis",
-    ano_publicacao: 2019,
+    editora: "Companhia das Letras",
+    ano_publicacao: 1899,
     categoria_id: "1",
     descricao: "Clássico da literatura brasileira que narra a história de Bentinho e Capitu.",
-    preco: 24.9,
+    preco: 29.9,
     peso: 0.3,
     dimensoes: { altura: 21, largura: 14, profundidade: 2 },
-    imagem_url: "/DonCasmurro.jpg",
+    imagem_url: "/dom-casmurro-book-cover.png",
     ativo: true,
     data_criacao: new Date("2024-01-01"),
   },
   {
     id: "2",
     isbn: "978-85-359-0277-5",
-    titulo: "Crime e Castigo",
-    autor: "Fiodór Dostoiévski",
-    editora: "Editora 34",
-    ano_publicacao: 2016,
+    titulo: "O Alquimista",
+    autor: "Paulo Coelho",
+    editora: "Rocco",
+    ano_publicacao: 1988,
     categoria_id: "1",
-    descricao: "lorem ipsum",
-    preco: 124.0,
+    descricao: "A jornada de Santiago em busca de seu tesouro pessoal.",
+    preco: 24.9,
     peso: 0.25,
     dimensoes: { altura: 20, largura: 13, profundidade: 1.5 },
-    imagem_url: "/CrimeECastigo.jpg",
+    imagem_url: "/o-alquimista-book-cover.png",
     ativo: true,
     data_criacao: new Date("2024-01-02"),
   },
   {
     id: "3",
     isbn: "978-85-7542-347-9",
-    titulo: "Código Limpo",
+    titulo: "Clean Code",
     autor: "Robert C. Martin",
     editora: "Alta Books",
-    ano_publicacao: 2020,
+    ano_publicacao: 2008,
     categoria_id: "3",
     descricao: "Manual de boas práticas para desenvolvimento de software.",
-    preco: 88.2,
+    preco: 89.9,
     peso: 0.6,
     dimensoes: { altura: 23, largura: 16, profundidade: 3 },
-    imagem_url: "/CodigoLimpo.jpg",
+    imagem_url: "/clean-code-programming-book.png",
     ativo: true,
     data_criacao: new Date("2024-01-03"),
   },
   {
     id: "4",
     isbn: "978-85-7326-158-9",
-    titulo: "Sapiens:Uma Breve História da Humanidade",
+    titulo: "Sapiens",
     autor: "Yuval Noah Harari",
-    editora: "Companhia das Letras",
-    ano_publicacao: 2020,
+    editora: "L&PM",
+    ano_publicacao: 2011,
     categoria_id: "2",
     descricao: "Uma breve história da humanidade.",
-    preco: 94.9,
+    preco: 39.9,
     peso: 0.4,
     dimensoes: { altura: 21, largura: 14, profundidade: 2.5 },
-    imagem_url: "/Sapiens.jpg",
+    imagem_url: "/sapiens-book-cover-history.png",
     ativo: true,
     data_criacao: new Date("2024-01-04"),
   },
   {
     id: "5",
     isbn: "978-85-7542-789-7",
-    titulo: "Harry Potter e a Pedra Filosofal",
-    autor: "J.K. Rowling",
-    editora: "Rocco",
-    ano_publicacao: 2017,
+    titulo: "O Pequeno Príncipe",
+    autor: "Antoine de Saint-Exupéry",
+    editora: "Agir",
+    ano_publicacao: 1943,
     categoria_id: "4",
-    descricao: "Lorem Ipsum",
-    preco: 64.9,
+    descricao: "Clássico da literatura infantil sobre amizade e imaginação.",
+    preco: 19.9,
     peso: 0.2,
     dimensoes: { altura: 18, largura: 12, profundidade: 1 },
-    imagem_url: "/HarryPotter.jpg",
+    imagem_url: "/o-pequeno-pr-ncipe-book-cover.png",
     ativo: true,
     data_criacao: new Date("2024-01-05"),
   },
@@ -96,13 +96,13 @@ export const mockBooks: Book[] = [
     titulo: "Mindset",
     autor: "Carol S. Dweck",
     editora: "Objetiva",
-    ano_publicacao: 2017,
+    ano_publicacao: 2006,
     categoria_id: "5",
     descricao: "A nova psicologia do sucesso.",
-    preco: 89.9,
+    preco: 34.9,
     peso: 0.35,
     dimensoes: { altura: 21, largura: 14, profundidade: 2 },
-    imagem_url: "/Mindset.jpg",
+    imagem_url: "/mindset-psychology-book-cover.png",
     ativo: true,
     data_criacao: new Date("2024-01-06"),
   },
@@ -429,3 +429,90 @@ export const mockPaymentCards: PaymentCard[] = [
     updated_at: new Date("2024-01-05"),
   },
 ]
+
+// Mock coupons data for checkout functionality
+export const mockCoupons: Coupon[] = [
+  {
+    id: "1",
+    codigo: "DESCONTO10",
+    tipo: "PERCENTUAL",
+    valor: 10,
+    ativo: true,
+    usado: false,
+    data_criacao: new Date("2024-01-01"),
+    data_expiracao: new Date("2024-12-31"),
+  },
+  {
+    id: "2",
+    codigo: "FRETE15",
+    tipo: "VALOR_FIXO",
+    valor: 15,
+    ativo: true,
+    usado: false,
+    data_criacao: new Date("2024-01-01"),
+    data_expiracao: new Date("2024-12-31"),
+  },
+  {
+    id: "3",
+    codigo: "TROCA50",
+    tipo: "VALOR_FIXO",
+    valor: 50,
+    ativo: true,
+    usado: false,
+    data_criacao: new Date("2024-01-01"),
+    data_expiracao: new Date("2024-12-31"),
+  },
+  {
+    id: "4",
+    codigo: "EXPIRED",
+    tipo: "PERCENTUAL",
+    valor: 20,
+    ativo: true,
+    usado: false,
+    data_criacao: new Date("2024-01-01"),
+    data_expiracao: new Date("2024-01-15"), // Expired coupon for testing
+  },
+]
+
+export const updateStockQuantity = (bookId: string, quantityChange: number): boolean => {
+  const stockIndex = mockStock.findIndex((stock) => stock.book_id === bookId)
+
+  if (stockIndex === -1) {
+    console.error(`Stock not found for book ID: ${bookId}`)
+    return false
+  }
+
+  const currentStock = mockStock[stockIndex]
+  const newQuantity = currentStock.quantidade_disponivel + quantityChange
+
+  if (newQuantity < 0) {
+    console.error(`Cannot reduce stock below zero for book ID: ${bookId}`)
+    return false
+  }
+
+  // Update the stock quantity and timestamp
+  mockStock[stockIndex] = {
+    ...currentStock,
+    quantidade_disponivel: newQuantity,
+    data_atualizacao: new Date(),
+  }
+
+  console.log(`Stock updated for book ${bookId}: ${currentStock.quantidade_disponivel} -> ${newQuantity}`)
+  return true
+}
+
+export const getStockImpactForExchange = (exchangeItems: Array<{ productId: string; quantity: number }>) => {
+  return exchangeItems.map((item) => {
+    const stock = getStockByBookId(item.productId)
+    const book = getBookById(item.productId)
+
+    return {
+      productId: item.productId,
+      productName: book?.titulo || "Produto não encontrado",
+      quantity: item.quantity,
+      currentStock: stock?.quantidade_disponivel || 0,
+      newStock: (stock?.quantidade_disponivel || 0) + item.quantity,
+      canReturn: true, // In real app, this could check item condition
+    }
+  })
+}

@@ -87,7 +87,15 @@ export interface Order {
   id: string
   user_id: string
   codigo_pedido: string
-  status: "pendente" | "processando" | "enviado" | "entregue" | "cancelado"
+  status:
+    | "pendente"
+    | "processando"
+    | "enviado"
+    | "entregue"
+    | "cancelado"
+    | "em_troca"
+    | "troca_autorizada"
+    | "troca_recebida"
   endereco_entrega_id: string
   endereco_cobranca_id: string
   cartao_credito_id: string
@@ -117,15 +125,35 @@ export interface Exchange {
   status: "solicitada" | "aprovada" | "processando" | "concluida" | "rejeitada"
   data_solicitacao: Date
   data_conclusao?: Date
+  items_trocados: ExchangeItem[]
+  observacoes_admin?: string
+  cupom_gerado?: string
+  valor_cupom?: number
+  itens_retornaram_estoque: boolean
+  data_recebimento?: Date
 }
 
-export interface Recommendation {
+export interface ExchangeItem {
   id: string
-  user_id: string
+  exchange_id: string
+  order_item_id: string
   book_id: string
-  score: number
-  motivo: string
+  quantidade: number
+  motivo_troca: string
+  condicao_item?: "perfeito" | "bom" | "danificado" | "inutilizavel"
+}
+
+export interface ExchangeCoupon {
+  id: string
+  codigo: string
+  user_id: string
+  exchange_id: string
+  valor: number
   data_criacao: Date
+  data_expiracao: Date
+  usado: boolean
+  data_uso?: Date
+  order_id_uso?: string
 }
 
 // Shopping cart context type
