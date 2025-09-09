@@ -38,6 +38,7 @@ import {
 export function RegisterForm() {
   const [formData, setFormData] = useState({
     nome: "",
+    genero: "OUTRO",
     email: "",
     cpf: "",
     telefone: "",
@@ -286,7 +287,31 @@ export function RegisterForm() {
                   onChange={handleChange}
                 />
               </div>
-            </div>
+
+             
+                <div className="space-y-2">
+                  <Label htmlFor="genero">Gênero *</Label>
+                  <Select
+                    value={formData.genero}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        genero: value, // agora atualiza o campo correto
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o gênero" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MASCULINO">Masculino</SelectItem>
+                      <SelectItem value="FEMININO">Feminino</SelectItem>
+                      <SelectItem value="OUTRO">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
