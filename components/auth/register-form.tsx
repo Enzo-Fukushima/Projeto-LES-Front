@@ -348,7 +348,7 @@ export function RegisterForm() {
                     }))
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger data-testid="select-genero" className="w-full">
                     <SelectValue placeholder="Selecione o gênero" />
                   </SelectTrigger>
                   <SelectContent>
@@ -448,6 +448,7 @@ export function RegisterForm() {
                   Tipo Residência *
                 </Label>
                 <Select
+                  
                   value={formData.endereco_cobranca.tipoResidencia || undefined}
                   onValueChange={(value) =>
                     setFormData((prev) => ({
@@ -459,7 +460,7 @@ export function RegisterForm() {
                     }))
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" data-testid="select-tipo-residencia">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -485,7 +486,7 @@ export function RegisterForm() {
                     }))
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" data-testid="select-tipo-logradouro">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -647,6 +648,7 @@ export function RegisterForm() {
                       Tipo Residência *
                     </Label>
                     <Select
+                      data-testid="select-tipo-residencia"
                       value={
                         formData.endereco_entrega.tipoResidencia || undefined
                       }
@@ -675,6 +677,7 @@ export function RegisterForm() {
                       Tipo Logradouro *
                     </Label>
                     <Select
+                      data-testid="select-tipo-logradouro"
                       value={
                         formData.endereco_entrega.tipoLogradouro || undefined
                       }
