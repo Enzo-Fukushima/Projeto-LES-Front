@@ -76,7 +76,7 @@ export default function EditCustomerPage() {
         title: "Cliente atualizado",
         description: "As informações do cliente foram salvas com sucesso.",
       })
-      router.push(`/admin/customers/${cliente.id}`)
+      router.push(`/admin/customers`)
     } catch {
       toast({ title: "Erro", description: "Não foi possível atualizar o cliente." })
     } finally {
