@@ -3,7 +3,7 @@ describe('Register Form', () => {
         cy.visit('http://localhost:3000/register');
     });
 
-    it('should fill and submit the registration form', () => {
+    it('Deve preencher e enviar o formulario de cadastro', () => {
         // Mock da API antes do submit
         cy.intercept('POST', '**/clientes', {
         statusCode: 200
