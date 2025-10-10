@@ -1,5 +1,15 @@
 // src/lib/types.ts
 
+export type User = Cliente; // Alias para seu tipo de cliente
+
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (email: string, senha: string) => Promise<boolean>;
+  logout: () => void;
+  updateUser: (updatedUser: Partial<User>) => void;
+}
+
 export type TipoTelefone = "RESIDENCIAL" | "CELULAR" | "COMERCIAL";
 export type Genero = "MASCULINO" | "FEMININO" | "OUTRO";
 
