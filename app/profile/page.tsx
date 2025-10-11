@@ -1,28 +1,58 @@
 "use client"
+
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAuth } from "@/contexts/auth-context"
 import { ArrowLeft, User, MapPin, CreditCard, Lock } from "lucide-react"
 import { PersonalInfoForm } from "@/components/profile/personal-info-form"
 import { AddressManagement } from "@/components/profile/address-management"
 import { PaymentManagement } from "@/components/profile/payment-management"
 import { PasswordChangeForm } from "@/components/profile/password-change-form"
+import { clientesService } from "@/services/ClienteService"
+import type { Cliente } from "@/lib/types"
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const [user, setUser] = useState<Cliente | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Substitua pelo ID fixo do cliente que você quer carregar
+  const FIXED_USER_ID = 16
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      setIsLoading(true)
+      try {
+        const fetchedUser = await clientesService.get(FIXED_USER_ID)
+        setUser(fetchedUser)
+      } catch (error) {
+        console.error("Erro ao buscar usuário:", error)
+        setUser(null)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <p>Carregando usuário...</p>
+      </div>
+    )
+  }
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
-          <p className="text-muted-foreground mb-4">Você precisa estar logado para acessar seu perfil.</p>
-          <Button asChild>
-            <Link href="/login">Fazer Login</Link>
-          </Button>
-        </div>
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
+        <p className="text-muted-foreground mb-4">Não foi possível carregar o usuário.</p>
+        <Button asChild>
+          <Link href="/login">Fazer Login</Link>
+        </Button>
       </div>
     )
   }
@@ -101,7 +131,7 @@ export default function ProfilePage() {
               <CardTitle>Alterar Senha</CardTitle>
             </CardHeader>
             <CardContent>
-              <PasswordChangeForm />
+              <PasswordChangeForm userId={user.id} />
             </CardContent>
           </Card>
         </TabsContent>

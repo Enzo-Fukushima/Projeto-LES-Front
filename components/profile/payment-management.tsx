@@ -13,7 +13,7 @@ import { mockPaymentCards } from "@/lib/mock-data"
 import type { PaymentCard } from "@/lib/types"
 
 interface PaymentManagementProps {
-  userId: string
+  userId: number 
 }
 
 export function PaymentManagement({ userId }: PaymentManagementProps) {

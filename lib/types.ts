@@ -15,16 +15,18 @@ export type Genero = "MASCULINO" | "FEMININO" | "OUTRO";
 
 export interface Endereco {
   id: number;
-  tipoResidencia: "RESIDENCIAL" | "COMERCIAL" | "OUTRO";
+ apelido?: string;
+  tipoResidencia: "CASA" | "APARTAMENTO";
   tipoLogradouro: "RUA" | "AVENIDA" | "TRAVESSA" | "ALAMEDA" | "OUTRO";
   tipoEndereco: "ENTREGA" | "COBRANCA";
   logradouro: string;
-  numero: string;
-  apelido?: string;
+  numero: number;
   bairro: string;
-  cidade: string;
-  estado: string;
   cep: string;
+  cidade: string;
+  estado: string; // 2 letras
+  pais?: string;
+  clienteId: number; // Para associar ao cliente
 }
 
 export interface CartaoCredito {
@@ -67,16 +69,19 @@ export type ClienteUpdateDTO = {
   ranking?: number;
 }
 
-export interface CreateClienteEnderecoDTO {
-  cep: string;
+export interface EnderecoCreateDTO {
   apelido?: string;
+  tipoResidencia: "CASA" | "APARTAMENTO";
+  tipoLogradouro: "RUA" | "AVENIDA" | "TRAVESSA" | "ALAMEDA" | "OUTRO";
+  tipoEndereco: "ENTREGA" | "COBRANCA";
   logradouro: string;
-  numero: string;
-  complemento?: string;
+  numero: number;
   bairro: string;
+  cep: string;
   cidade: string;
-  estado: string;
-  tipo?: "COBRANCA" | "ENTREGA";
+  estado: string; // 2 letras
+  pais?: string;
+  clienteId: number; // Para associar ao cliente
 }
 
 export interface CreateClienteDTO {
@@ -92,7 +97,7 @@ export interface CreateClienteDTO {
   numeroTelefone: string; // 8 ou 9 dígitos
   ativo?: boolean;
   ranking?: number;
-  enderecos: CreateClienteEnderecoDTO[];
+  enderecos: CreateClienteDTO[];
 }
 
 export interface EnderecoDTO {
