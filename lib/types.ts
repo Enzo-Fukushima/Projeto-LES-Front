@@ -1,6 +1,21 @@
+<<<<<<< HEAD
 // ==========================
 // Tipos básicos / enums
 // ==========================
+=======
+// src/lib/types.ts
+
+export type User = Cliente; // Alias para seu tipo de cliente
+
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (email: string, senha: string) => Promise<boolean>;
+  logout: () => void;
+  updateUser: (updatedUser: Partial<User>) => void;
+}
+
+>>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
 export type TipoTelefone = "RESIDENCIAL" | "CELULAR" | "COMERCIAL";
 export type Genero = "MASCULINO" | "FEMININO" | "OUTRO";
 
@@ -19,6 +34,7 @@ export type TipoLogradouro =
 
 export interface Endereco {
   id: number;
+<<<<<<< HEAD
   tipoEndereco: TipoEndereco;
   tipoResidencia?: TipoResidencia;
   tipoLogradouro?: TipoLogradouro;
@@ -26,13 +42,26 @@ export interface Endereco {
   numero: string;
   complemento?: string;
   apelido?: string;
+=======
+ apelido?: string;
+  tipoResidencia: "CASA" | "APARTAMENTO";
+  tipoLogradouro: "RUA" | "AVENIDA" | "TRAVESSA" | "ALAMEDA" | "OUTRO";
+  tipoEndereco: "ENTREGA" | "COBRANCA";
+  logradouro: string;
+  numero: number;
+>>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
   bairro: string;
-  cidade: string;
-  estado: string;
   cep: string;
+<<<<<<< HEAD
   pais?: string;
   principal: boolean;
   user_id: number;
+=======
+  cidade: string;
+  estado: string; // 2 letras
+  pais?: string;
+  clienteId: number; // Para associar ao cliente
+>>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
 }
 
 export interface EnderecoDTO {
@@ -124,6 +153,24 @@ export interface ClienteUpdateDTO {
   ranking?: number;
 }
 
+<<<<<<< HEAD
+=======
+export interface EnderecoCreateDTO {
+  apelido?: string;
+  tipoResidencia: "CASA" | "APARTAMENTO";
+  tipoLogradouro: "RUA" | "AVENIDA" | "TRAVESSA" | "ALAMEDA" | "OUTRO";
+  tipoEndereco: "ENTREGA" | "COBRANCA";
+  logradouro: string;
+  numero: number;
+  bairro: string;
+  cep: string;
+  cidade: string;
+  estado: string; // 2 letras
+  pais?: string;
+  clienteId: number; // Para associar ao cliente
+}
+
+>>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
 export interface CreateClienteDTO {
   id?: number;
   nome: string;
@@ -137,7 +184,33 @@ export interface CreateClienteDTO {
   numeroTelefone: string;
   ativo?: boolean;
   ranking?: number;
+<<<<<<< HEAD
   enderecos: CreateEnderecoDTO[];
+=======
+  enderecos: CreateClienteDTO[];
+}
+
+export interface EnderecoDTO {
+  id?: number;
+  tipo: "COBRANCA" | "ENTREGA";
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  pais?: string;
+  apelido?: string;
+}
+
+export interface CartaoCreditoDTO {
+  id?: number;
+  numero: string;
+  nomeTitular: string;
+  validade: string; // MM/AA
+  cvv: string;
+>>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
 }
 
 export interface ClienteDetalhadoDTO {

@@ -11,8 +11,12 @@ import type { CartaoCreditoDTO } from "@/lib/types";
 import { cartaoService } from "@/services/CartoesService";
 
 interface PaymentManagementProps {
+<<<<<<< HEAD
   userId: number;
   payments: CartaoCreditoDTO[];
+=======
+  userId: number 
+>>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
 }
 
 export function PaymentManagement({
