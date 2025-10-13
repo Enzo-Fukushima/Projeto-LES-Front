@@ -9,7 +9,7 @@ import {
   ReactNode,
   useMemo,
 } from "react";
-import { carrinhoService } from "@/services/carrinhoService";
+import { carrinhoService } from "@/services/CarrinhoService";
 import { CarrinhoDTO, CarrinhoItemDTO } from "@/lib/types";
 
 interface CartContextProps {
