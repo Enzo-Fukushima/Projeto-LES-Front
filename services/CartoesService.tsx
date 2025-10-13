@@ -11,7 +11,7 @@ export const cartaoService = {
   create: async (
     dto: Omit<CartaoCreditoDTO, "id">
   ): Promise<CartaoCreditoDTO> => {
-    const { data } = await api.post("/cartoes", dto);
+    const { data } = await api.post("/clientes/cartoes", dto);
     return data;
   },
 
