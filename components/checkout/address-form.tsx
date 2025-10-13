@@ -1,85 +1,130 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { Address } from "@/lib/types"
-import { validateCEP, formatCEP } from "@/lib/utils/shipping"
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import type { EnderecoDTO, CreateEnderecoDTO } from "@/lib/types";
+import { enderecoService } from "@/services/EnderecoService";
+import { validateCEP, formatCEP } from "@/lib/utils/shipping";
 
 interface AddressFormProps {
-  address?: Address
-  onSave: (address: Omit<Address, "id" | "user_id">) => void
-  onCancel?: () => void
-  title?: string
+  address?: EnderecoDTO;
+  userId: number;
+  onSave?: (address: EnderecoDTO) => void;
+  onCancel?: () => void;
+  title?: string;
 }
 
-export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: AddressFormProps) {
-  const [formData, setFormData] = useState({
-    tipo: address?.tipo || ("entrega" as "entrega" | "cobranca"),
-    cep: address?.cep || "",
+export function AddressForm({
+  address,
+  userId,
+  onSave,
+  onCancel,
+  title = "Endereço",
+}: AddressFormProps) {
+  const [formData, setFormData] = useState<Omit<CreateEnderecoDTO, "user_id">>({
+    tipoEndereco: address?.tipoEndereco || "ENTREGA",
     logradouro: address?.logradouro || "",
     numero: address?.numero || "",
     complemento: address?.complemento || "",
+    apelido: address?.apelido || "",
     bairro: address?.bairro || "",
     cidade: address?.cidade || "",
     estado: address?.estado || "",
+    cep: address?.cep || "",
     pais: address?.pais || "Brasil",
     principal: address?.principal || false,
-  })
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
-    }
-  }
+  const handleChange = (
+    field: keyof typeof formData,
+    value: string | boolean
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
 
   const handleCEPChange = (value: string) => {
-    const formatted = formatCEP(value)
-    handleChange("cep", formatted)
+    const formatted = formatCEP(value);
+    handleChange("cep", formatted);
 
-    // Mock CEP lookup - in real app, would call CEP API
     if (validateCEP(formatted)) {
-      setFormData((prev) => ({
-        ...prev,
-        logradouro: "Rua das Flores",
-        bairro: "Centro",
-        cidade: "São Paulo",
-        estado: "SP",
-      }))
+      // Mock: substitua por consulta real de CEP
+      handleChange("logradouro", "Rua das Flores");
+      handleChange("bairro", "Centro");
+      handleChange("cidade", "São Paulo");
+      handleChange("estado", "SP");
     }
-  }
+  };
 
   const validate = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
-    if (!formData.cep) newErrors.cep = "CEP é obrigatório"
-    else if (!validateCEP(formData.cep)) newErrors.cep = "CEP inválido"
+    if (!formData.cep) newErrors.cep = "CEP é obrigatório";
+    else if (!validateCEP(formData.cep)) newErrors.cep = "CEP inválido";
 
-    if (!formData.logradouro) newErrors.logradouro = "Logradouro é obrigatório"
-    if (!formData.numero) newErrors.numero = "Número é obrigatório"
-    if (!formData.bairro) newErrors.bairro = "Bairro é obrigatório"
-    if (!formData.cidade) newErrors.cidade = "Cidade é obrigatória"
-    if (!formData.estado) newErrors.estado = "Estado é obrigatório"
+    if (!formData.logradouro) newErrors.logradouro = "Logradouro é obrigatório";
+    if (!formData.numero) newErrors.numero = "Número é obrigatório";
+    if (!formData.bairro) newErrors.bairro = "Bairro é obrigatório";
+    if (!formData.cidade) newErrors.cidade = "Cidade é obrigatória";
+    if (!formData.estado) newErrors.estado = "Estado é obrigatório";
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (validate()) {
-      onSave(formData)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setIsLoading(true);
+    try {
+      let savedAddress: EnderecoDTO;
+
+      if (address?.id) {
+        // Atualiza endereço existente
+        savedAddress = await enderecoService.update(address.id, {
+          ...formData,
+          user_id: userId,
+        });
+      } else {
+        // Cria novo endereço
+        savedAddress = await enderecoService.create({
+          ...formData,
+          user_id: userId,
+        });
+      }
+
+      toast({ title: "Sucesso!", description: "Endereço salvo com sucesso." });
+      onSave?.(savedAddress);
+    } catch (error: any) {
+      console.error("Erro ao salvar endereço:", error);
+      toast({
+        title: "Erro",
+        description:
+          error?.response?.data?.message ||
+          "Não foi possível salvar o endereço.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -88,12 +133,15 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Tipo e CEP */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="tipo">Tipo de Endereço</Label>
+              <Label htmlFor="tipoEndereco">Tipo de Endereço</Label>
               <Select
-                value={formData.tipo}
-                onValueChange={(value: "entrega" | "cobranca") => handleChange("tipo", value)}
+                value={formData.tipoEndereco}
+                onValueChange={(value: "entrega" | "cobranca") =>
+                  handleChange("tipoEndereco", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -114,10 +162,13 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
                 placeholder="00000-000"
                 maxLength={9}
               />
-              {errors.cep && <p className="text-sm text-destructive">{errors.cep}</p>}
+              {errors.cep && (
+                <p className="text-sm text-destructive">{errors.cep}</p>
+              )}
             </div>
           </div>
 
+          {/* Logradouro, Número, Complemento */}
           <div className="space-y-2">
             <Label htmlFor="logradouro">Logradouro *</Label>
             <Input
@@ -126,7 +177,9 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
               onChange={(e) => handleChange("logradouro", e.target.value)}
               placeholder="Rua, Avenida, etc."
             />
-            {errors.logradouro && <p className="text-sm text-destructive">{errors.logradouro}</p>}
+            {errors.logradouro && (
+              <p className="text-sm text-destructive">{errors.logradouro}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -138,7 +191,9 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
                 onChange={(e) => handleChange("numero", e.target.value)}
                 placeholder="123"
               />
-              {errors.numero && <p className="text-sm text-destructive">{errors.numero}</p>}
+              {errors.numero && (
+                <p className="text-sm text-destructive">{errors.numero}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -152,6 +207,7 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
             </div>
           </div>
 
+          {/* Bairro e Cidade */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="bairro">Bairro *</Label>
@@ -161,7 +217,9 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
                 onChange={(e) => handleChange("bairro", e.target.value)}
                 placeholder="Centro"
               />
-              {errors.bairro && <p className="text-sm text-destructive">{errors.bairro}</p>}
+              {errors.bairro && (
+                <p className="text-sm text-destructive">{errors.bairro}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -172,14 +230,20 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
                 onChange={(e) => handleChange("cidade", e.target.value)}
                 placeholder="São Paulo"
               />
-              {errors.cidade && <p className="text-sm text-destructive">{errors.cidade}</p>}
+              {errors.cidade && (
+                <p className="text-sm text-destructive">{errors.cidade}</p>
+              )}
             </div>
           </div>
 
+          {/* Estado e País */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="estado">Estado *</Label>
-              <Select value={formData.estado} onValueChange={(value) => handleChange("estado", value)}>
+              <Select
+                value={formData.estado}
+                onValueChange={(value) => handleChange("estado", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
@@ -190,30 +254,35 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
                   <SelectItem value="RS">Rio Grande do Sul</SelectItem>
                   <SelectItem value="PR">Paraná</SelectItem>
                   <SelectItem value="SC">Santa Catarina</SelectItem>
-                  {/* Add more states as needed */}
                 </SelectContent>
               </Select>
-              {errors.estado && <p className="text-sm text-destructive">{errors.estado}</p>}
+              {errors.estado && (
+                <p className="text-sm text-destructive">{errors.estado}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="pais">País</Label>
-              <Input id="pais" value={formData.pais} onChange={(e) => handleChange("pais", e.target.value)} disabled />
+              <Input id="pais" value={formData.pais} disabled />
             </div>
           </div>
 
+          {/* Endereço principal */}
           <div className="flex items-center space-x-2">
             <Checkbox
               id="principal"
               checked={formData.principal}
-              onCheckedChange={(checked) => handleChange("principal", checked as boolean)}
+              onCheckedChange={(checked) =>
+                handleChange("principal", checked as boolean)
+              }
             />
             <Label htmlFor="principal">Definir como endereço principal</Label>
           </div>
 
+          {/* Botões */}
           <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1">
-              Salvar Endereço
+            <Button type="submit" className="flex-1" disabled={isLoading}>
+              {isLoading ? "Salvando..." : "Salvar Endereço"}
             </Button>
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel}>
@@ -224,5 +293,5 @@ export function AddressForm({ address, onSave, onCancel, title = "Endereço" }: 
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

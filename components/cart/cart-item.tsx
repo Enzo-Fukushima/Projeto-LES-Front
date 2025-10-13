@@ -1,78 +1,90 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import type { CartItem } from "@/lib/types"
-import { getBookById } from "@/lib/mock-data"
-import { Minus, Plus, Trash2 } from "lucide-react"
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Minus, Plus, Trash2 } from "lucide-react";
+import { CarrinhoItemDTO } from "@/lib/types";
 
 interface CartItemProps {
-  item: CartItem
-  onUpdateQuantity: (itemId: string, quantity: number) => void
-  onRemove: (itemId: string) => void
+  item: CarrinhoItemDTO;
+  onUpdateQuantity: (livroId: number, quantity: number) => Promise<void>;
+  onRemove: (livroId: number) => Promise<void>;
+  disabled?: boolean; // opcional, desabilita botões durante chamadas
 }
 
-export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItemProps) {
-  const book = getBookById(item.book_id)
-
-  if (!book) {
-    return null
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("pt-BR", {
+export function CartItemComponent({
+  item,
+  onUpdateQuantity,
+  onRemove,
+  disabled = false,
+}: CartItemProps) {
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(price)
-  }
+    }).format(price);
 
-  const totalPrice = book.preco * item.quantidade
+  const handleChangeQuantity = (quantity: number) => {
+    if (quantity < 1) return;
+    onUpdateQuantity(item.livroId, quantity);
+  };
 
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex gap-4">
-          {/* Book Image */}
+          {/* Imagem do Livro */}
           <div className="relative w-20 h-28 flex-shrink-0">
             <Image
-              src={book.imagem_url || "/placeholder.svg"}
-              alt={book.titulo}
+              src={item.imagemUrl || "/placeholder.svg"}
+              alt={item.titulo}
               fill
               className="object-cover rounded"
               sizes="80px"
             />
           </div>
 
-          {/* Book Details */}
-          <div className="flex-1 space-y-2">
+          {/* Detalhes do Livro */}
+          <div className="flex-1 flex flex-col justify-between space-y-2">
             <div>
-              <h3 className="font-semibold text-sm line-clamp-2">{book.titulo}</h3>
-              <p className="text-sm text-muted-foreground">{book.autor}</p>
-              <p className="text-sm text-muted-foreground">{book.editora}</p>
+              <h3 className="font-semibold text-sm line-clamp-2">
+                {item.titulo}
+              </h3>
+              <p className="text-sm text-muted-foreground">{item.autor}</p>
+              <p className="text-sm text-muted-foreground">{item.editora}</p>
             </div>
 
+            {/* Controles de Quantidade e Remover */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onUpdateQuantity(item.id, item.quantidade - 1)}
-                  disabled={item.quantidade <= 1}
+                  onClick={() => handleChangeQuantity(item.quantidade - 1)}
+                  disabled={item.quantidade <= 1 || disabled}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
 
                 <Input
                   type="number"
-                  min="1"
+                  min={1}
                   value={item.quantidade}
-                  onChange={(e) => onUpdateQuantity(item.id, Number.parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    handleChangeQuantity(Number.parseInt(e.target.value) || 1)
+                  }
                   className="w-16 text-center"
+                  disabled={disabled}
                 />
 
-                <Button variant="outline" size="sm" onClick={() => onUpdateQuantity(item.id, item.quantidade + 1)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleChangeQuantity(item.quantidade + 1)}
+                  disabled={disabled}
+                >
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>
@@ -80,20 +92,26 @@ export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItem
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onRemove(item.id)}
+                onClick={() => onRemove(item.livroId)}
+                disabled={disabled}
                 className="text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
 
+            {/* Preço */}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{formatPrice(book.preco)} cada</span>
-              <span className="font-semibold text-primary">{formatPrice(totalPrice)}</span>
+              <span className="text-sm text-muted-foreground">
+                {formatPrice(item.precoUnitario)} cada
+              </span>
+              <span className="font-semibold text-primary">
+                {formatPrice(item.subtotal)}
+              </span>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

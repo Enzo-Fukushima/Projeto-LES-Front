@@ -1,52 +1,76 @@
-"use client"
+"use client";
 
-import { notFound } from "next/navigation"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Header } from "@/components/layout/header"
-import { SimilarBooks } from "@/components/recommendations/similar-books"
-import { AIChatbot } from "@/components/recommendations/ai-chatbot"
-import { getBookById, getStockByBookId, mockCategories } from "@/lib/mock-data"
-import { useCart } from "@/contexts/cart-context"
-import { useToast } from "@/hooks/use-toast"
-import { ShoppingCart, ArrowLeft, Package, Truck } from "lucide-react"
-import Link from "next/link"
+import { useEffect, useState } from "react";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/layout/header";
+import { SimilarBooks } from "@/components/recommendations/similar-books";
+import { AIChatbot } from "@/components/recommendations/ai-chatbot";
+import { useCart } from "@/contexts/cart-context";
+import { useToast } from "@/hooks/use-toast";
+import { ShoppingCart, ArrowLeft, Package, Truck } from "lucide-react";
+import { livrosService } from "@/services/livrosService";
 
 interface BookPageProps {
   params: {
-    id: string
-  }
+    id: string;
+  };
 }
 
 export default function BookPage({ params }: BookPageProps) {
-  const book = getBookById(params.id)
-  const stock = getStockByBookId(params.id)
-  const { addItem } = useCart()
-  const { toast } = useToast()
+  const [book, setBook] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { addItem } = useCart();
+  const { toast } = useToast();
 
-  if (!book) {
-    notFound()
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        const data = await livrosService.getById(Number(params.id));
+        setBook(data);
+      } catch (err) {
+        console.error("Erro ao buscar livro:", err);
+        setError("Erro ao carregar o livro.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBook();
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Carregando livro...
+      </div>
+    );
   }
 
-  const category = mockCategories.find((cat) => cat.id === book.categoria_id)
-  const isInStock = stock && stock.quantidade_disponivel > 0
+  if (error || !book) {
+    notFound();
+  }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("pt-BR", {
+  const isInStock = book.quantidade_disponivel > 0;
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(price)
-  }
+    }).format(price);
 
   const handleAddToCart = () => {
-    addItem(book.id, 1)
+    addItem(book.id, 1);
     toast({
       title: "Produto adicionado",
       description: `"${book.titulo}" foi adicionado ao seu carrinho!`,
-    })
-  }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,10 +85,10 @@ export default function BookPage({ params }: BookPageProps) {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-          {/* Book Image */}
+          {/* Imagem do livro */}
           <div className="relative aspect-[3/4] max-w-md mx-auto">
             <Image
-              src={book.imagem_url || "/placeholder.svg"}
+              src={book.imagemUrl || "/placeholder.svg"}
               alt={book.titulo}
               fill
               className="object-cover rounded-lg shadow-lg"
@@ -80,28 +104,36 @@ export default function BookPage({ params }: BookPageProps) {
             )}
           </div>
 
-          {/* Book Details */}
+          {/* Detalhes do livro */}
           <div className="space-y-6">
             <div>
               <Badge variant="secondary" className="mb-2">
-                {category?.nome}
+                {book.categoria || "Sem categoria"}
               </Badge>
-              <h1 className="text-3xl font-bold text-balance mb-2">{book.titulo}</h1>
-              <p className="text-xl text-muted-foreground mb-1">por {book.autor}</p>
+              <h1 className="text-3xl font-bold mb-2">{book.titulo}</h1>
+              <p className="text-xl text-muted-foreground mb-1">
+                por {book.autor}
+              </p>
               <p className="text-muted-foreground">
-                {book.editora} • {book.ano_publicacao}
+                {book.editora} • {book.anoPublicacao}
               </p>
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-3xl font-bold text-primary">{formatPrice(book.preco)}</span>
-              {stock && <span className="text-muted-foreground">{stock.quantidade_disponivel} em estoque</span>}
+              <span className="text-3xl font-bold text-primary">
+                {formatPrice(book.preco)}
+              </span>
+              <span className="text-muted-foreground">
+                {book.quantidade_disponivel} em estoque
+              </span>
             </div>
 
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-3">Descrição</h3>
-                <p className="text-muted-foreground leading-relaxed">{book.descricao}</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  {book.descricao}
+                </p>
               </CardContent>
             </Card>
 
@@ -119,24 +151,19 @@ export default function BookPage({ params }: BookPageProps) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Ano:</span>
-                    <span>{book.ano_publicacao}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Peso:</span>
-                    <span>{book.peso}kg</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dimensões:</span>
-                    <span>
-                      {book.dimensoes.altura} x {book.dimensoes.largura} x {book.dimensoes.profundidade} cm
-                    </span>
+                    <span>{book.anoPublicacao}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <div className="space-y-4">
-              <Button size="lg" className="w-full" disabled={!isInStock} onClick={handleAddToCart}>
+              <Button
+                size="lg"
+                className="w-full"
+                disabled={!isInStock}
+                onClick={handleAddToCart}
+              >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 {isInStock ? "Adicionar ao Carrinho" : "Produto Indisponível"}
               </Button>
@@ -155,12 +182,12 @@ export default function BookPage({ params }: BookPageProps) {
           </div>
         </div>
 
-        {/* Similar Books Section */}
+        {/* Livros similares */}
         <SimilarBooks bookId={book.id} />
       </div>
 
-      {/* AI Chatbot */}
+      {/* Chatbot */}
       <AIChatbot />
     </div>
-  )
+  );
 }

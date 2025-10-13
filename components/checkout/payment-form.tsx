@@ -1,94 +1,115 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { CreditCard } from "@/lib/types"
-import { CreditCardIcon } from "lucide-react"
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CreditCardIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { cartaoService } from "@/services/CartoesService";
+import type { CartaoCreditoDTO } from "@/lib/types";
 
 interface PaymentFormProps {
-  onSave: (card: Omit<CreditCard, "id" | "user_id">) => void
-  onCancel?: () => void
+  userId: number;
+  onSaveSuccess?: (card: CartaoCreditoDTO) => void;
+  onCancel?: () => void;
 }
 
-export function PaymentForm({ onSave, onCancel }: PaymentFormProps) {
+export function PaymentForm({
+  userId,
+  onSaveSuccess,
+  onCancel,
+}: PaymentFormProps) {
   const [formData, setFormData] = useState({
     numero: "",
-    nome_titular: "",
+    nomeTitular: "",
     validade: "",
     cvv: "",
     bandeira: "",
     principal: false,
-  })
-
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
-    }
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
 
   const handleCardNumberChange = (value: string) => {
-    // Format card number and detect brand
-    const cleanValue = value.replace(/\D/g, "")
-    const formattedValue = cleanValue.replace(/(\d{4})(?=\d)/g, "$1 ")
-
-    handleChange("numero", formattedValue)
+    const cleanValue = value.replace(/\D/g, "");
+    const formattedValue = cleanValue.replace(/(\d{4})(?=\d)/g, "$1 ");
+    handleChange("numero", formattedValue);
 
     // Detect card brand
-    let bandeira = ""
-    if (cleanValue.startsWith("4")) bandeira = "Visa"
-    else if (cleanValue.startsWith("5")) bandeira = "Mastercard"
-    else if (cleanValue.startsWith("3")) bandeira = "American Express"
+    let bandeira = "";
+    if (cleanValue.startsWith("4")) bandeira = "Visa";
+    else if (cleanValue.startsWith("5")) bandeira = "Mastercard";
+    else if (cleanValue.startsWith("3")) bandeira = "American Express";
 
-    if (bandeira) handleChange("bandeira", bandeira)
-  }
+    if (bandeira) handleChange("bandeira", bandeira);
+  };
 
   const handleValidadeChange = (value: string) => {
-    const cleanValue = value.replace(/\D/g, "")
-    const formattedValue = cleanValue.replace(/(\d{2})(\d{2})/, "$1/$2")
-    handleChange("validade", formattedValue)
-  }
+    const cleanValue = value.replace(/\D/g, "");
+    const formattedValue = cleanValue.replace(/(\d{2})(\d{2})/, "$1/$2");
+    handleChange("validade", formattedValue);
+  };
 
   const validate = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
+    const numeroLimpo = formData.numero.replace(/\D/g, "");
 
-    if (!formData.numero) newErrors.numero = "Número do cartão é obrigatório"
-    else if (formData.numero.replace(/\D/g, "").length < 13) newErrors.numero = "Número do cartão inválido"
+    if (!numeroLimpo) newErrors.numero = "Número do cartão é obrigatório";
+    else if (numeroLimpo.length < 13)
+      newErrors.numero = "Número do cartão inválido";
 
-    if (!formData.nome_titular) newErrors.nome_titular = "Nome do titular é obrigatório"
-    if (!formData.validade) newErrors.validade = "Validade é obrigatória"
-    else if (!/^\d{2}\/\d{2}$/.test(formData.validade)) newErrors.validade = "Validade inválida (MM/AA)"
+    if (!formData.nomeTitular)
+      newErrors.nomeTitular = "Nome do titular é obrigatório";
+    if (!formData.validade) newErrors.validade = "Validade é obrigatória";
+    else if (!/^\d{2}\/\d{2}$/.test(formData.validade))
+      newErrors.validade = "Validade inválida (MM/AA)";
 
-    if (!formData.cvv) newErrors.cvv = "CVV é obrigatório"
-    else if (formData.cvv.length < 3) newErrors.cvv = "CVV inválido"
+    if (!formData.cvv) newErrors.cvv = "CVV é obrigatório";
+    else if (formData.cvv.length < 3) newErrors.cvv = "CVV inválido";
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (validate()) {
-      // Mask card number for security
-      const maskedNumber = formData.numero.replace(/\d(?=\d{4})/g, "*")
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
 
-      onSave({
-        numero_mascarado: maskedNumber,
-        nome_titular: formData.nome_titular,
+    setLoading(true);
+    try {
+      const payload: Omit<CartaoCreditoDTO, "id"> = {
+        numero: formData.numero.replace(/\s/g, ""),
+        nomeTitular: formData.nomeTitular,
         validade: formData.validade,
+        cvv: formData.cvv,
         bandeira: formData.bandeira,
-        principal: formData.principal,
-      })
+        clienteId: userId,
+      };
+
+      const savedCard = await cartaoService.create(payload);
+
+      toast({ title: "Sucesso", description: "Cartão salvo com sucesso!" });
+      if (onSaveSuccess) onSaveSuccess(savedCard);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o cartão.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -100,6 +121,7 @@ export function PaymentForm({ onSave, onCancel }: PaymentFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Número do cartão */}
           <div className="space-y-2">
             <Label htmlFor="numero">Número do Cartão *</Label>
             <Input
@@ -109,21 +131,33 @@ export function PaymentForm({ onSave, onCancel }: PaymentFormProps) {
               placeholder="0000 0000 0000 0000"
               maxLength={19}
             />
-            {errors.numero && <p className="text-sm text-destructive">{errors.numero}</p>}
-            {formData.bandeira && <p className="text-sm text-muted-foreground">Bandeira: {formData.bandeira}</p>}
+            {errors.numero && (
+              <p className="text-sm text-destructive">{errors.numero}</p>
+            )}
+            {formData.bandeira && (
+              <p className="text-sm text-muted-foreground">
+                Bandeira: {formData.bandeira}
+              </p>
+            )}
           </div>
 
+          {/* Nome titular */}
           <div className="space-y-2">
-            <Label htmlFor="nome_titular">Nome do Titular *</Label>
+            <Label htmlFor="nomeTitular">Nome do Titular *</Label>
             <Input
-              id="nome_titular"
-              value={formData.nome_titular}
-              onChange={(e) => handleChange("nome_titular", e.target.value.toUpperCase())}
+              id="nomeTitular"
+              value={formData.nomeTitular}
+              onChange={(e) =>
+                handleChange("nomeTitular", e.target.value.toUpperCase())
+              }
               placeholder="NOME COMO NO CARTÃO"
             />
-            {errors.nome_titular && <p className="text-sm text-destructive">{errors.nome_titular}</p>}
+            {errors.nomeTitular && (
+              <p className="text-sm text-destructive">{errors.nomeTitular}</p>
+            )}
           </div>
 
+          {/* Validade e CVV */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="validade">Validade *</Label>
@@ -134,35 +168,44 @@ export function PaymentForm({ onSave, onCancel }: PaymentFormProps) {
                 placeholder="MM/AA"
                 maxLength={5}
               />
-              {errors.validade && <p className="text-sm text-destructive">{errors.validade}</p>}
+              {errors.validade && (
+                <p className="text-sm text-destructive">{errors.validade}</p>
+              )}
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="cvv">CVV *</Label>
               <Input
                 id="cvv"
                 type="password"
                 value={formData.cvv}
-                onChange={(e) => handleChange("cvv", e.target.value.replace(/\D/g, ""))}
+                onChange={(e) =>
+                  handleChange("cvv", e.target.value.replace(/\D/g, ""))
+                }
                 placeholder="123"
                 maxLength={4}
               />
-              {errors.cvv && <p className="text-sm text-destructive">{errors.cvv}</p>}
+              {errors.cvv && (
+                <p className="text-sm text-destructive">{errors.cvv}</p>
+              )}
             </div>
           </div>
 
+          {/* Cartão principal */}
           <div className="flex items-center space-x-2">
             <Checkbox
               id="principal"
               checked={formData.principal}
-              onCheckedChange={(checked) => handleChange("principal", checked as boolean)}
+              onCheckedChange={(checked) =>
+                handleChange("principal", checked as boolean)
+              }
             />
             <Label htmlFor="principal">Definir como cartão principal</Label>
           </div>
 
+          {/* Botões */}
           <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1">
-              Salvar Cartão
+            <Button type="submit" className="flex-1" disabled={loading}>
+              {loading ? "Salvando..." : "Salvar Cartão"}
             </Button>
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel}>
@@ -173,5 +216,5 @@ export function PaymentForm({ onSave, onCancel }: PaymentFormProps) {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

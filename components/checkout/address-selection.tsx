@@ -1,21 +1,55 @@
-"use client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Plus, MapPin } from "lucide-react"
-import type { Address } from "@/lib/types"
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Plus, MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { enderecoService } from "@/services/EnderecoService";
+import type { EnderecoDTO } from "@/lib/types";
 
 interface AddressSelectionProps {
-  addresses: Address[]
-  selectedAddressId: string | null
-  onAddressSelect: (address: Address) => void
-  onAddNew: () => void
+  userId: number;
+  selectedAddressId: string | null;
+  onAddressSelect: (address: EnderecoDTO) => void;
+  onAddNew: () => void;
 }
 
-export function AddressSelection({ addresses, selectedAddressId, onAddressSelect, onAddNew }: AddressSelectionProps) {
-  const deliveryAddresses = addresses.filter((addr) => addr.tipo === "entrega")
+export function AddressSelection({
+  userId,
+  selectedAddressId,
+  onAddressSelect,
+  onAddNew,
+}: AddressSelectionProps) {
+  const [addresses, setAddresses] = useState<EnderecoDTO[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  // 🔄 Carregar endereços do usuário
+  useEffect(() => {
+    async function fetchAddresses() {
+      setLoading(true);
+      try {
+        const data = await enderecoService.listByUser(userId);
+        setAddresses(data);
+      } catch (error) {
+        console.error("Erro ao carregar endereços:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os endereços.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAddresses();
+  }, [userId, toast]);
+
+  const deliveryAddresses = addresses.filter((addr) => addr.tipoEndereco === "ENTREGA");
 
   return (
     <Card>
@@ -26,18 +60,27 @@ export function AddressSelection({ addresses, selectedAddressId, onAddressSelect
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {deliveryAddresses.length > 0 ? (
+        {loading ? (
+          <p className="text-center text-muted-foreground">Carregando endereços...</p>
+        ) : deliveryAddresses.length > 0 ? (
           <RadioGroup
             value={selectedAddressId || ""}
             onValueChange={(value) => {
-              const address = deliveryAddresses.find((addr) => addr.id === value)
-              if (address) onAddressSelect(address)
+              const address = deliveryAddresses.find((addr) => addr.id?.toString() === value);
+              if (address) onAddressSelect(address);
             }}
           >
             {deliveryAddresses.map((address) => (
-              <div key={address.id} className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50">
-                <RadioGroupItem value={address.id} id={address.id} className="mt-1" />
-                <Label htmlFor={address.id} className="flex-1 cursor-pointer">
+              <div
+                key={address.id}
+                className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50"
+              >
+                <RadioGroupItem
+                  value={address.id?.toString() || ""}
+                  id={address.id?.toString() || ""}
+                  className="mt-1"
+                />
+                <Label htmlFor={address.id?.toString() || ""} className="flex-1 cursor-pointer">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
@@ -49,7 +92,9 @@ export function AddressSelection({ addresses, selectedAddressId, onAddressSelect
                         </Badge>
                       )}
                     </div>
-                    {address.complemento && <p className="text-sm text-muted-foreground">{address.complemento}</p>}
+                    {address.complemento && (
+                      <p className="text-sm text-muted-foreground">{address.complemento}</p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {address.bairro}, {address.cidade} - {address.estado}
                     </p>
@@ -72,5 +117,5 @@ export function AddressSelection({ addresses, selectedAddressId, onAddressSelect
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }

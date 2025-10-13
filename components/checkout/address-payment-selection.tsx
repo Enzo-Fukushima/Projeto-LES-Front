@@ -1,58 +1,88 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import type { Address, PaymentCard } from "@/lib/types"
-import { MapPin, CreditCard, Plus } from "lucide-react"
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { MapPin, CreditCard, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { enderecoService } from "@/services/EnderecoService";
+import { cartaoService } from "@/services/CartoesService";
+import type { EnderecoDTO, CartaoCreditoDTO } from "@/lib/types";
 
 interface AddressPaymentSelectionProps {
-  addresses: Address[]
-  paymentCards: PaymentCard[]
-  selectedAddressId: string | null
-  selectedCardId: string | null
-  onAddressSelect: (address: Address) => void
-  onCardSelect: (card: PaymentCard) => void
-  onAddNewAddress: () => void
-  onAddNewCard: () => void
-  onContinue: () => void
+  userId: number;
+  onAddNewAddress: () => void;
+  onAddNewCard: () => void;
+  onContinue: (address: EnderecoDTO, card: CartaoCreditoDTO) => void;
 }
 
 export function AddressPaymentSelection({
-  addresses,
-  paymentCards,
-  selectedAddressId,
-  selectedCardId,
-  onAddressSelect,
-  onCardSelect,
+  userId,
   onAddNewAddress,
   onAddNewCard,
   onContinue,
 }: AddressPaymentSelectionProps) {
-  const [addressValue, setAddressValue] = useState(selectedAddressId || "")
-  const [cardValue, setCardValue] = useState(selectedCardId || "")
+  const [addresses, setAddresses] = useState<EnderecoDTO[]>([]);
+  const [cards, setCards] = useState<CartaoCreditoDTO[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [loadingCards, setLoadingCards] = useState(false);
+  const { toast } = useToast();
 
-  const handleAddressChange = (addressId: string) => {
-    setAddressValue(addressId)
-    const address = addresses.find((addr) => addr.id === addressId)
-    if (address) {
-      onAddressSelect(address)
+  // 🔄 Carregar endereços
+  useEffect(() => {
+    async function fetchAddresses() {
+      setLoadingAddresses(true);
+      try {
+        const data = await enderecoService.listByUser(userId);
+        setAddresses(data);
+      } catch (error) {
+        console.error("Erro ao carregar endereços:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os endereços.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingAddresses(false);
+      }
     }
-  }
+    fetchAddresses();
+  }, [userId, toast]);
 
-  const handleCardChange = (cardId: string) => {
-    setCardValue(cardId)
-    const card = paymentCards.find((c) => c.id === cardId)
-    if (card) {
-      onCardSelect(card)
+  // 🔄 Carregar cartões
+  useEffect(() => {
+    async function fetchCards() {
+      setLoadingCards(true);
+      try {
+        const data = await cartaoService.listByUser(userId);
+        setCards(data);
+      } catch (error) {
+        console.error("Erro ao carregar cartões:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os cartões.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingCards(false);
+      }
     }
-  }
+    fetchCards();
+  }, [userId, toast]);
 
-  const canContinue = addressValue && cardValue
+  const selectedAddress = addresses.find(
+    (a) => a.id?.toString() === selectedAddressId
+  );
+  const selectedCard = cards.find((c) => c.id?.toString() === selectedCardId);
+  const canContinue = !!selectedAddress && !!selectedCard;
 
   return (
     <div className="space-y-6">
@@ -65,37 +95,69 @@ export function AddressPaymentSelection({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={addressValue} onValueChange={handleAddressChange}>
-            <div className="space-y-3">
-              {addresses.map((address) => (
-                <div key={address.id} className="flex items-start space-x-3">
-                  <RadioGroupItem value={address.id} id={`address-${address.id}`} className="mt-1" />
-                  <Label htmlFor={`address-${address.id}`} className="flex-1 cursor-pointer">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{address.apelido}</span>
-                        <Badge variant={address.tipo === "entrega" ? "default" : "secondary"} className="text-xs">
-                          {address.tipo}
-                        </Badge>
+          {loadingAddresses ? (
+            <p className="text-center text-muted-foreground">
+              Carregando endereços...
+            </p>
+          ) : addresses.length > 0 ? (
+            <RadioGroup
+              value={selectedAddressId || ""}
+              onValueChange={(value) => setSelectedAddressId(value)}
+            >
+              <div className="space-y-3">
+                {addresses.map((address) => (
+                  <div key={address.id} className="flex items-start space-x-3">
+                    <RadioGroupItem
+                      value={address.id?.toString() || ""}
+                      id={`address-${address.id}`}
+                      className="mt-1"
+                    />
+                    <Label
+                      htmlFor={`address-${address.id}`}
+                      className="flex-1 cursor-pointer"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{address.apelido}</span>
+                          <Badge
+                            variant={
+                              address.tipoEndereco?.toLowerCase() === "cobranca"
+                                ? "secondary"
+                                : "default"
+                            }
+                            className="text-xs"
+                          >
+                            {address.tipoEndereco}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {address.logradouro}, {address.numero}
+                          {address.complemento && `, ${address.complemento}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {address.bairro}, {address.cidade} - {address.estado}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {address.cep}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {address.logradouro}, {address.numero}
-                        {address.complemento && `, ${address.complemento}`}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {address.bairro}, {address.cidade} - {address.estado}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{address.cep}</p>
-                    </div>
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </RadioGroup>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </RadioGroup>
+          ) : (
+            <p className="text-center text-muted-foreground">
+              Nenhum endereço cadastrado
+            </p>
+          )}
 
           <Separator className="my-4" />
-
-          <Button variant="outline" onClick={onAddNewAddress} className="w-full bg-transparent">
+          <Button
+            variant="outline"
+            onClick={onAddNewAddress}
+            className="w-full bg-transparent"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Novo Endereço
           </Button>
@@ -111,32 +173,61 @@ export function AddressPaymentSelection({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={cardValue} onValueChange={handleCardChange}>
-            <div className="space-y-3">
-              {paymentCards.map((card) => (
-                <div key={card.id} className="flex items-start space-x-3">
-                  <RadioGroupItem value={card.id} id={`card-${card.id}`} className="mt-1" />
-                  <Label htmlFor={`card-${card.id}`} className="flex-1 cursor-pointer">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{card.bandeira}</span>
-                        <span className="text-sm text-muted-foreground">{card.numero_mascarado}</span>
+          {loadingCards ? (
+            <p className="text-center text-muted-foreground">
+              Carregando cartões...
+            </p>
+          ) : cards.length > 0 ? (
+            <RadioGroup
+              value={selectedCardId || ""}
+              onValueChange={(value) => setSelectedCardId(value)}
+            >
+              <div className="space-y-3">
+                {cards.map((card) => (
+                  <div key={card.id} className="flex items-start space-x-3">
+                    <RadioGroupItem
+                      value={card.id?.toString() || ""}
+                      id={`card-${card.id}`}
+                      className="mt-1"
+                    />
+                    <Label
+                      htmlFor={`card-${card.id}`}
+                      className="flex-1 cursor-pointer"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{card.bandeira}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {card.numero.replace(
+                              /\d{12}(\d{4})/,
+                              "**** **** **** $1"
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {card.nomeTitular}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Válido até {card.validade}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">{card.nome_titular}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Válido até {(card.mes_vencimento || 0).toString().padStart(2, "0")}/
-                        {card.ano_vencimento || "0000"}
-                      </p>
-                    </div>
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </RadioGroup>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </RadioGroup>
+          ) : (
+            <p className="text-center text-muted-foreground">
+              Nenhum cartão cadastrado
+            </p>
+          )}
 
           <Separator className="my-4" />
-
-          <Button variant="outline" onClick={onAddNewCard} className="w-full bg-transparent">
+          <Button
+            variant="outline"
+            onClick={onAddNewCard}
+            className="w-full bg-transparent"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Novo Cartão
           </Button>
@@ -144,10 +235,18 @@ export function AddressPaymentSelection({
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={onContinue} disabled={!canContinue} size="lg">
+        <Button
+          onClick={() =>
+            selectedAddress &&
+            selectedCard &&
+            onContinue(selectedAddress, selectedCard)
+          }
+          disabled={!canContinue}
+          size="lg"
+        >
           Continuar para Entrega
         </Button>
       </div>
     </div>
-  )
+  );
 }

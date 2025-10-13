@@ -1,28 +1,30 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { useToast } from "@/hooks/use-toast"
-import { Plus, Edit, Trash2, MapPin } from "lucide-react"
-import { mockAddresses } from "@/lib/mock-data"
-import type { Address } from "@/lib/types"
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Edit, Trash2, MapPin } from "lucide-react";
+import { enderecoService } from "@/services/EnderecoService";
+import type { EnderecoDTO } from "@/lib/types";
 
 interface AddressManagementProps {
-  userId: string
+  userId: number;
+  addresses: EnderecoDTO[];
 }
 
 export function AddressManagement({ userId }: AddressManagementProps) {
-  const [addresses, setAddresses] = useState(mockAddresses.filter((addr) => addr.user_id === userId))
-  const [isEditing, setIsEditing] = useState<string | null>(null)
-  const [isAdding, setIsAdding] = useState(false)
-  const [formData, setFormData] = useState({
-    tipo: "entrega" as "cobranca" | "entrega",
+  const [addresses, setAddresses] = useState<EnderecoDTO[]>([]);
+  const [isEditing, setIsEditing] = useState<number | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+
+  const [formData, setFormData] = useState<
+    Omit<EnderecoDTO, "id"> & { user_id: number }
+  >({
+    tipoEndereco: "ENTREGA",
     logradouro: "",
     numero: "",
     complemento: "",
@@ -30,72 +32,34 @@ export function AddressManagement({ userId }: AddressManagementProps) {
     cidade: "",
     estado: "",
     cep: "",
-  })
-  const { toast } = useToast()
+    pais: "Brasil",
+    principal: false,
+    user_id: Number(userId),
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { toast } = useToast();
 
-    try {
-      if (isEditing) {
-        setAddresses((prev) =>
-          prev.map((addr) => (addr.id === isEditing ? { ...addr, ...formData, updated_at: new Date() } : addr)),
-        )
+  // Carregar endereços do usuário
+  useEffect(() => {
+    async function fetchAddresses() {
+      try {
+        const data = await enderecoService.listByUser(Number(userId));
+        setAddresses(data);
+      } catch (error) {
+        console.error("Erro ao carregar endereços:", error);
         toast({
-          title: "Sucesso!",
-          description: "Endereço atualizado com sucesso.",
-        })
-      } else {
-        const newAddress: Address = {
-          id: Date.now().toString(),
-          user_id: userId,
-          ...formData,
-          created_at: new Date(),
-          updated_at: new Date(),
-        }
-        setAddresses((prev) => [...prev, newAddress])
-        toast({
-          title: "Sucesso!",
-          description: "Novo endereço adicionado com sucesso.",
-        })
+          title: "Erro",
+          description: "Não foi possível carregar os endereços.",
+          variant: "destructive",
+        });
       }
-
-      resetForm()
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar o endereço.",
-        variant: "destructive",
-      })
     }
-  }
-
-  const handleEdit = (address: Address) => {
-    setFormData({
-      tipo: address.tipo,
-      logradouro: address.logradouro,
-      numero: address.numero,
-      complemento: address.complemento || "",
-      bairro: address.bairro,
-      cidade: address.cidade,
-      estado: address.estado,
-      cep: address.cep,
-    })
-    setIsEditing(address.id)
-    setIsAdding(true)
-  }
-
-  const handleDelete = (addressId: string) => {
-    setAddresses((prev) => prev.filter((addr) => addr.id !== addressId))
-    toast({
-      title: "Sucesso!",
-      description: "Endereço removido com sucesso.",
-    })
-  }
+    fetchAddresses();
+  }, [userId, toast]);
 
   const resetForm = () => {
     setFormData({
-      tipo: "entrega",
+      tipoEndereco: "ENTREGA",
       logradouro: "",
       numero: "",
       complemento: "",
@@ -103,10 +67,87 @@ export function AddressManagement({ userId }: AddressManagementProps) {
       cidade: "",
       estado: "",
       cep: "",
-    })
-    setIsEditing(null)
-    setIsAdding(false)
-  }
+      pais: "Brasil",
+      principal: false,
+      user_id: Number(userId),
+    });
+    setIsEditing(null);
+    setIsAdding(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      let savedAddress: EnderecoDTO;
+
+      if (isEditing) {
+        // Atualizar endereço existente
+        savedAddress = await enderecoService.update(isEditing, formData);
+        setAddresses((prev) =>
+          prev.map((addr) =>
+            addr.id === savedAddress.id ? savedAddress : addr
+          )
+        );
+        toast({
+          title: "Sucesso!",
+          description: "Endereço atualizado com sucesso.",
+        });
+      } else {
+        // Criar novo endereço
+        savedAddress = await enderecoService.create(formData);
+        setAddresses((prev) => [...prev, savedAddress]);
+        toast({
+          title: "Sucesso!",
+          description: "Novo endereço adicionado com sucesso.",
+        });
+      }
+
+      resetForm();
+    } catch (error) {
+      console.error("Erro ao salvar endereço:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o endereço.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (address: EnderecoDTO) => {
+    setFormData({
+      tipoEndereco: address.tipoEndereco,
+      logradouro: address.logradouro,
+      numero: address.numero,
+      complemento: address.complemento || "",
+      bairro: address.bairro,
+      cidade: address.cidade,
+      estado: address.estado,
+      cep: address.cep,
+      pais: address.pais || "Brasil",
+      principal: address.principal,
+      user_id: Number(userId),
+    });
+    setIsEditing(address.id!);
+    setIsAdding(true);
+  };
+
+  const handleDelete = async (addressId: number) => {
+    try {
+      await enderecoService.delete(addressId);
+      setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
+      toast({
+        title: "Sucesso!",
+        description: "Endereço removido com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao remover endereço:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o endereço.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -121,22 +162,29 @@ export function AddressManagement({ userId }: AddressManagementProps) {
       {isAdding && (
         <Card>
           <CardHeader>
-            <CardTitle>{isEditing ? "Editar Endereço" : "Novo Endereço"}</CardTitle>
+            <CardTitle>
+              {isEditing ? "Editar Endereço" : "Novo Endereço"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="tipo">Tipo</Label>
+                  <Label htmlFor="tipoEndereco">Tipo</Label>
                   <select
-                    id="tipo"
-                    value={formData.tipo}
-                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value as "cobranca" | "entrega" })}
+                    id="tipoEndereco"
+                    value={formData.tipoEndereco}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        tipoEndereco: e.target.value as "ENTREGA" | "COBRANCA",
+                      })
+                    }
                     className="w-full px-3 py-2 border border-input rounded-md"
                     required
                   >
-                    <option value="entrega">Entrega</option>
-                    <option value="cobranca">Cobrança</option>
+                    <option value="ENTREGA">Entrega</option>
+                    <option value="COBRANCA">Cobrança</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -144,7 +192,9 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <Input
                     id="cep"
                     value={formData.cep}
-                    onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cep: e.target.value })
+                    }
                     placeholder="00000-000"
                     required
                   />
@@ -154,7 +204,9 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <Input
                     id="logradouro"
                     value={formData.logradouro}
-                    onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, logradouro: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -163,7 +215,9 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <Input
                     id="numero"
                     value={formData.numero}
-                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, numero: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -171,8 +225,10 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <Label htmlFor="complemento">Complemento</Label>
                   <Input
                     id="complemento"
-                    value={formData.complemento}
-                    onChange={(e) => setFormData({ ...formData, complemento: e.target.value })}
+                    value={formData.complemento || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, complemento: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -180,7 +236,9 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <Input
                     id="bairro"
                     value={formData.bairro}
-                    onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bairro: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -189,7 +247,9 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <Input
                     id="cidade"
                     value={formData.cidade}
-                    onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cidade: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -198,7 +258,9 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <Input
                     id="estado"
                     value={formData.estado}
-                    onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, estado: e.target.value })
+                    }
                     maxLength={2}
                     required
                   />
@@ -206,7 +268,9 @@ export function AddressManagement({ userId }: AddressManagementProps) {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit">{isEditing ? "Atualizar" : "Adicionar"} Endereço</Button>
+                <Button type="submit">
+                  {isEditing ? "Atualizar" : "Adicionar"} Endereço
+                </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
@@ -225,8 +289,16 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={address.tipo === "cobranca" ? "secondary" : "default"}>
-                        {address.tipo === "cobranca" ? "Cobrança" : "Entrega"}
+                      <Badge
+                        variant={
+                          address.tipoEndereco === "COBRANCA"
+                            ? "secondary"
+                            : "default"
+                        }
+                      >
+                        {address.tipoEndereco === "COBRANCA"
+                          ? "Cobrança"
+                          : "Entrega"}
                       </Badge>
                     </div>
                     <p className="font-medium">
@@ -236,14 +308,24 @@ export function AddressManagement({ userId }: AddressManagementProps) {
                     <p className="text-sm text-muted-foreground">
                       {address.bairro}, {address.cidade} - {address.estado}
                     </p>
-                    <p className="text-sm text-muted-foreground">CEP: {address.cep}</p>
+                    <p className="text-sm text-muted-foreground">
+                      CEP: {address.cep}
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(address)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(address)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(address.id)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(address.id!)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -257,8 +339,12 @@ export function AddressManagement({ userId }: AddressManagementProps) {
         <Card>
           <CardContent className="text-center py-8">
             <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum endereço cadastrado</h3>
-            <p className="text-muted-foreground mb-4">Adicione um endereço para facilitar suas compras.</p>
+            <h3 className="text-lg font-semibold mb-2">
+              Nenhum endereço cadastrado
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Adicione um endereço para facilitar suas compras.
+            </p>
             <Button onClick={() => setIsAdding(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Primeiro Endereço
@@ -267,5 +353,5 @@ export function AddressManagement({ userId }: AddressManagementProps) {
         </Card>
       )}
     </div>
-  )
+  );
 }

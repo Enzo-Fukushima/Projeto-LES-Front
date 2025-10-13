@@ -1,8 +1,23 @@
-import api from "../lib/api";
+import api from "@/lib/api";
+import type { EnderecoDTO } from "@/lib/types";
 
-export const enderecosService = {
-  listByCliente: async (clienteId: number) => (await api.get(`/clientes/${clienteId}/enderecos`)).data,
-  create: async (payload: any) => (await api.post("/clientes/enderecos", payload)).data,
-  update: async (id: number, payload: any) => (await api.put(`/clientes/enderecos/${id}`, payload)).data,
-  remove: async (id: number) => (await api.delete(`/clientes/enderecos/${id}`)).status,
+export const enderecoService = {
+  listByUser: async (userId: number): Promise<EnderecoDTO[]> => {
+    const { data } = await api.get(`/enderecos/usuario/${userId}`);
+    return data;
+  },
+  create: async (payload: Omit<EnderecoDTO, "id">): Promise<EnderecoDTO> => {
+    const { data } = await api.post("/enderecos", payload);
+    return data;
+  },
+  update: async (
+    id: number,
+    payload: Omit<EnderecoDTO, "id">
+  ): Promise<EnderecoDTO> => {
+    const { data } = await api.put(`/enderecos/${id}`, payload);
+    return data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/enderecos/${id}`);
+  },
 };

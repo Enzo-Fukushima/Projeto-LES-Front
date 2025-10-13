@@ -1,46 +1,70 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Header } from "@/components/layout/header"
-import { ProductGrid } from "@/components/products/product-grid"
-import { CategoryFilter } from "@/components/products/category-filter"
-import { AIChatbot } from "@/components/recommendations/ai-chatbot"
-import { searchBooks, getBooksByCategory } from "@/lib/mock-data"
-import { useCart } from "@/contexts/cart-context"
-import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft } from "lucide-react"
-import type { Book } from "@/lib/types"
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Header } from "@/components/layout/header";
+import { ProductGrid } from "@/components/products/product-grid";
+import { CategoryFilter } from "@/components/products/category-filter";
+import { AIChatbot } from "@/components/recommendations/ai-chatbot";
+import { useCart } from "@/contexts/cart-context";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
+import type { Livro } from "@/lib/types";
+import { livrosService } from "@/services/livrosService"; // Serviço que consome API real
 
 export default function SearchPage() {
-  const searchParams = useSearchParams()
-  const query = searchParams.get("q") || ""
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [searchResults, setSearchResults] = useState<Book[]>([])
-  const { addItem } = useCart()
-  const { toast } = useToast()
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
+
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Livro[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { addItem } = useCart();
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (query) {
-      let results = searchBooks(query)
-      if (selectedCategory) {
-        results = results.filter((book) => book.categoria_id === selectedCategory)
-      }
-      setSearchResults(results)
-    } else {
-      setSearchResults(selectedCategory ? getBooksByCategory(selectedCategory) : [])
-    }
-  }, [query, selectedCategory])
+    const fetchBooks = async () => {
+      setIsLoading(true);
+      try {
+        let books: Livro[] = [];
+        if (query) {
+          books = await livrosService.search(query); // API real de busca
+        } else if (selectedCategory) {
+          books = await livrosService.getByCategory(selectedCategory); // API por categoria
+        } else {
+          books = [];
+        }
 
-  const handleAddToCart = (bookId: string) => {
-    addItem(bookId, 1)
+        if (selectedCategory && query) {
+          books = books.filter((b) => b.categoria_id === selectedCategory);
+        }
+
+        setSearchResults(books);
+      } catch (error) {
+        console.error("Erro ao buscar livros:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível buscar os livros. Tente novamente.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, [query, selectedCategory, toast]);
+
+  const handleAddToCart = (bookId: number) => {
+    addItem(bookId, 1);
     toast({
       title: "Produto adicionado",
       description: "O livro foi adicionado ao seu carrinho com sucesso!",
-    })
-  }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,21 +78,36 @@ export default function SearchPage() {
               Voltar à Loja
             </Link>
           </Button>
+
           <div>
-            <h1 className="text-3xl font-bold mb-2">{query ? `Resultados para "${query}"` : "Buscar Livros"}</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              {query ? `Resultados para "${query}"` : "Buscar Livros"}
+            </h1>
             <p className="text-muted-foreground">
-              {searchResults.length} {searchResults.length === 1 ? "livro encontrado" : "livros encontrados"}
+              {isLoading
+                ? "Carregando livros..."
+                : `${searchResults.length} ${
+                    searchResults.length === 1
+                      ? "livro encontrado"
+                      : "livros encontrados"
+                  }`}
             </p>
           </div>
         </div>
 
-        <CategoryFilter selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
 
-        <ProductGrid books={searchResults} onAddToCart={handleAddToCart} />
+        <ProductGrid
+          books={searchResults}
+          onAddToCart={handleAddToCart}
+          isLoading={isLoading}
+        />
       </div>
 
-      {/* AI Chatbot */}
       <AIChatbot />
     </div>
-  )
+  );
 }

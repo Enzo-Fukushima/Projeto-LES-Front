@@ -1,94 +1,130 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { createContext, useContext, useState } from "react"
-import type { User, AuthContextType } from "@/lib/types"
-import { validatePassword, generateCustomerCode } from "@/lib/utils/password"
-import { mockUsers } from "@/lib/mock-data"
+import React, { createContext, useContext, useEffect, useState } from "react";
+import type { User, AuthContextType, ClienteUpdateDTO } from "@/lib/types";
+import { validatePassword, generateCustomerCode } from "@/lib/utils/password";
+import { clientesService } from "@/services/ClienteService";
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Carrega o usuário do localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("bookstore_user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
+
+  // Login via API
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true)
-
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const foundUser = mockUsers.find((u) => u.email === email)
-    if (foundUser) {
-      setUser(foundUser)
-      localStorage.setItem("bookstore_user", JSON.stringify(foundUser))
-      setIsLoading(false)
-      return true
+    setIsLoading(true);
+    try {
+      const response = await clientesService.login({ email, senha: password });
+      if (response) {
+        setUser(response);
+        localStorage.setItem("bookstore_user", JSON.stringify(response));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Erro ao logar:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    setIsLoading(false)
-    return false
-  }
-
+  // Registro via API
   const register = async (userData: Partial<User>): Promise<boolean> => {
-    setIsLoading(true)
+    setIsLoading(true);
 
-    if (userData.senha_hash) {
-      const validation = validatePassword(userData.senha_hash)
-      if (!validation.isValid) {
-        setIsLoading(false)
-        return false
-      }
+    if (!userData.senha_hash) {
+      console.error("Senha é obrigatória para registro");
+      setIsLoading(false);
+      return false;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const newUser: User = {
-      id: Date.now().toString(),
-      codigo_cliente: generateCustomerCode(),
-      nome: userData.nome || "",
-      email: userData.email || "",
-      senha_hash: "hashed_" + userData.senha_hash,
-      telefone: userData.telefone,
-      data_nascimento: userData.data_nascimento,
-      ativo: true,
-      data_criacao: new Date(),
-      data_atualizacao: new Date(),
+    const validation = validatePassword(userData.senha_hash);
+    if (!validation.isValid) {
+      setIsLoading(false);
+      return false;
     }
 
-    setUser(newUser)
-    localStorage.setItem("bookstore_user", JSON.stringify(newUser))
-    setIsLoading(false)
-    return true
-  }
+    try {
+      const newUserPayload = {
+        ...userData,
+        codigo_cliente: generateCustomerCode(),
+        senha: userData.senha_hash, // Criar o campo obrigatório para API
+      };
 
+      const response = await clientesService.create(newUserPayload);
+      setUser(response);
+      localStorage.setItem("bookstore_user", JSON.stringify(response));
+      return true;
+    } catch (error) {
+      console.error("Erro ao registrar usuário:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Logout
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("bookstore_user")
-  }
+    setUser(null);
+    localStorage.removeItem("bookstore_user");
+  };
 
-  const updateUser = (updatedUserData: Partial<User>) => {
-    if (user) {
-      const updatedUser = {
-        ...user,
-        ...updatedUserData,
-        data_atualizacao: new Date(),
-      }
-      setUser(updatedUser)
-      localStorage.setItem("bookstore_user", JSON.stringify(updatedUser))
+  // Atualiza dados do usuário
+  const updateUser = async (updatedUserData: Partial<User>) => {
+    if (!user?.id) {
+      console.error("ID do usuário não definido. Update cancelado.");
+      return;
     }
-  }
+
+    setIsLoading(true);
+    try {
+      // Criar payload do tipo ClienteUpdateDTO
+      const payload: ClienteUpdateDTO = {
+        id: user.id, // garantido como number
+        nome: updatedUserData.nome ?? user.nome,
+        cpf: updatedUserData.cpf ?? user.cpf,
+        email: updatedUserData.email ?? user.email,
+        tipoTelefone: updatedUserData.tipoTelefone ?? user.tipoTelefone,
+        ddd: updatedUserData.ddd ?? user.ddd,
+        numeroTelefone: updatedUserData.numeroTelefone ?? user.numeroTelefone,
+        ativo: updatedUserData.ativo ?? user.ativo ?? false,
+        ranking: updatedUserData.ranking ?? user.ranking,
+        senha: updatedUserData.senha_hash, // se quiser atualizar senha
+        
+      };
+
+      const response = await clientesService.update(user.id, payload);
+      setUser(response);
+      localStorage.setItem("bookstore_user", JSON.stringify(response));
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateUser, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, login, register, logout, updateUser, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
+// Hook de acesso ao contexto
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

@@ -1,31 +1,89 @@
-"use client"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAuth } from "@/contexts/auth-context"
-import { ArrowLeft, User, MapPin, CreditCard, Lock } from "lucide-react"
-import { PersonalInfoForm } from "@/components/profile/personal-info-form"
-import { AddressManagement } from "@/components/profile/address-management"
-import { PaymentManagement } from "@/components/profile/payment-management"
-import { PasswordChangeForm } from "@/components/profile/password-change-form"
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/auth-context";
+import { ArrowLeft, User, MapPin, CreditCard, Lock } from "lucide-react";
+import { PersonalInfoForm } from "@/components/profile/personal-info-form";
+import { AddressManagement } from "@/components/profile/address-management";
+import { PaymentManagement } from "@/components/profile/payment-management";
+import { PasswordChangeForm } from "@/components/profile/password-change-form";
+import { clientesService } from "@/services/ClienteService";
+import { enderecoService } from "@/services/EnderecoService";
+import { cartaoService } from "@/services/CartoesService";
+import type {
+  ClienteDetalhadoDTO,
+  EnderecoDTO,
+  CartaoCreditoDTO,
+} from "@/lib/types";
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user: authUser } = useAuth();
+  const [user, setUser] = useState<ClienteDetalhadoDTO | null>(null);
+  const [addresses, setAddresses] = useState<EnderecoDTO[]>([]);
+  const [payments, setPayments] = useState<CartaoCreditoDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!user) {
+  useEffect(() => {
+    if (!authUser?.id) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const userData = await clientesService.getById(authUser.id);
+        setUser(userData);
+
+        const userAddresses = await enderecoService.listByUser(authUser.id);
+        setAddresses(userAddresses);
+
+        const userPayments = await cartaoService.listByUser(authUser.id);
+        setPayments(userPayments);
+      } catch (err) {
+        console.error(err);
+        setError("Erro ao carregar dados do perfil");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [authUser]);
+
+  if (!authUser) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
-          <p className="text-muted-foreground mb-4">Você precisa estar logado para acessar seu perfil.</p>
-          <Button asChild>
-            <Link href="/login">Fazer Login</Link>
-          </Button>
-        </div>
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Acesso Negado</h1>
+        <p className="text-muted-foreground mb-4">
+          Você precisa estar logado para acessar seu perfil.
+        </p>
+        <Button asChild>
+          <Link href="/login">Fazer Login</Link>
+        </Button>
       </div>
-    )
+    );
   }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
+        Carregando perfil...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center text-destructive">
+        {error}
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -38,7 +96,9 @@ export default function ProfilePage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Meu Perfil</h1>
-          <p className="text-muted-foreground">Gerencie suas informações pessoais e configurações</p>
+          <p className="text-muted-foreground">
+            Gerencie suas informações pessoais e configurações
+          </p>
         </div>
       </div>
 
@@ -79,7 +139,10 @@ export default function ProfilePage() {
               <CardTitle>Gerenciar Endereços</CardTitle>
             </CardHeader>
             <CardContent>
-              <AddressManagement userId={user.id} />
+              <AddressManagement
+                userId={user.id}
+                addresses={addresses}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -90,7 +153,7 @@ export default function ProfilePage() {
               <CardTitle>Cartões de Pagamento</CardTitle>
             </CardHeader>
             <CardContent>
-              <PaymentManagement userId={user.id} />
+              <PaymentManagement userId={user.id} payments={payments} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -101,11 +164,11 @@ export default function ProfilePage() {
               <CardTitle>Alterar Senha</CardTitle>
             </CardHeader>
             <CardContent>
-              <PasswordChangeForm />
+              <PasswordChangeForm userId={user.id} />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
