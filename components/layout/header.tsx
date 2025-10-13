@@ -95,7 +95,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
                     <User className="h-5 w-5 mr-2" />
-                    {user.nome.split(" ")[0]}
+                    {user?.nome?.split(" ")[0] ?? "Usuário"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

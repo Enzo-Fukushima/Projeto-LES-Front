@@ -135,6 +135,7 @@ export const clientesService = {
     email: string;
     senha: string;
   }): Promise<ClienteDetalhadoDTO> {
+    console.log(payload)
     try {
       const { data } = await api.post<ClienteDetalhadoDTO>(
         "/clientes/login",

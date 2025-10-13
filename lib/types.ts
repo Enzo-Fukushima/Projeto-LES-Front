@@ -262,7 +262,6 @@ export interface CarrinhoItemDTO {
   editora: string;
   quantidade: number;
   precoUnitario: number;
-  subtotal: number;
   imagemUrl: string;
 }
 

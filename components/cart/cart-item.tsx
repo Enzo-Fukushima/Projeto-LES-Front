@@ -11,7 +11,7 @@ interface CartItemProps {
   item: CarrinhoItemDTO;
   onUpdateQuantity: (livroId: number, quantity: number) => Promise<void>;
   onRemove: (livroId: number) => Promise<void>;
-  disabled?: boolean; // opcional, desabilita botões durante chamadas
+  disabled?: boolean;
 }
 
 export function CartItemComponent({
@@ -20,6 +20,13 @@ export function CartItemComponent({
   onRemove,
   disabled = false,
 }: CartItemProps) {
+  // Fallbacks para evitar undefined
+  const quantidade = item.quantidade ?? 1;
+  const precoUnitario = item.precoUnitario ?? 0;
+  const titulo = item.titulo ?? "Livro desconhecido";
+  const autor = item.autor ?? "Autor não informado";
+  const editora = item.editora ?? "Editora não informada";
+
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -39,7 +46,7 @@ export function CartItemComponent({
           <div className="relative w-20 h-28 flex-shrink-0">
             <Image
               src={item.imagemUrl || "/placeholder.svg"}
-              alt={item.titulo}
+              alt={titulo}
               fill
               className="object-cover rounded"
               sizes="80px"
@@ -49,11 +56,9 @@ export function CartItemComponent({
           {/* Detalhes do Livro */}
           <div className="flex-1 flex flex-col justify-between space-y-2">
             <div>
-              <h3 className="font-semibold text-sm line-clamp-2">
-                {item.titulo}
-              </h3>
-              <p className="text-sm text-muted-foreground">{item.autor}</p>
-              <p className="text-sm text-muted-foreground">{item.editora}</p>
+              <h3 className="font-semibold text-sm line-clamp-2">{titulo}</h3>
+              <p className="text-sm text-muted-foreground">{autor}</p>
+              <p className="text-sm text-muted-foreground">{editora}</p>
             </div>
 
             {/* Controles de Quantidade e Remover */}
@@ -62,8 +67,8 @@ export function CartItemComponent({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleChangeQuantity(item.quantidade - 1)}
-                  disabled={item.quantidade <= 1 || disabled}
+                  onClick={() => handleChangeQuantity(quantidade - 1)}
+                  disabled={quantidade <= 1 || disabled}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
@@ -71,7 +76,7 @@ export function CartItemComponent({
                 <Input
                   type="number"
                   min={1}
-                  value={item.quantidade}
+                  value={quantidade}
                   onChange={(e) =>
                     handleChangeQuantity(Number.parseInt(e.target.value) || 1)
                   }
@@ -82,7 +87,7 @@ export function CartItemComponent({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleChangeQuantity(item.quantidade + 1)}
+                  onClick={() => handleChangeQuantity(quantidade + 1)}
                   disabled={disabled}
                 >
                   <Plus className="h-3 w-3" />
@@ -103,10 +108,10 @@ export function CartItemComponent({
             {/* Preço */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                {formatPrice(item.precoUnitario)} cada
+                {formatPrice(precoUnitario)} cada
               </span>
               <span className="font-semibold text-primary">
-                {formatPrice(item.subtotal)}
+                {formatPrice(precoUnitario * quantidade)}
               </span>
             </div>
           </div>

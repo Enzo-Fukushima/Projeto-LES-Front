@@ -27,7 +27,7 @@ export default function EditCustomerPage() {
     const fetchCliente = async () => {
       try {
         setLoading(true)
-        const data = await clientesService.get(clienteId)
+        const data = await clientesService.getById(clienteId)
         setCliente({
           id: data.id,
           nome: data.nome,
@@ -37,7 +37,7 @@ export default function EditCustomerPage() {
           tipoTelefone: data.tipoTelefone || "CELULAR",
           ddd: data.ddd || "",
           numeroTelefone: data.numeroTelefone || "",
-          ativo: data.ativo,
+          ativo: true || false,
           ranking: data.ranking || 0,
         })
       } catch {

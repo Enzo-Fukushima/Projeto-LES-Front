@@ -26,7 +26,8 @@ export default function CustomerDetailPage() {
     const fetchCustomer = async () => {
       try {
         setLoading(true);
-        const data = await clientesService.get(customerId);
+        const data = await clientesService.getById(customerId);
+        console.log(customerId)
         setCustomer({
           ...data,
           telefone:

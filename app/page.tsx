@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Star, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { livrosService } from "@/services/livrosService";
+import { livrosService } from "@/services/LivroService";
+import { carrinhoService } from "@/services/CarrinhoService";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function HomePage() {
   const [books, setBooks] = useState<any[]>([]);
@@ -19,6 +21,7 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { addItem } = useCart();
   const { toast } = useToast();
+   const { user } = useAuth(); // <-- pega o usuário logado
 
   // Buscar todos os livros da API ao carregar a página
   useEffect(() => {
@@ -50,13 +53,23 @@ export default function HomePage() {
     }
   }, [selectedCategory, books]);
 
-  const handleAddToCart = (bookId: number) => {
-    addItem(bookId, 1);
+const handleAddToCart = async (bookId: number) => {
+  try {
+    await addItem(bookId, 1);
+
     toast({
       title: "Produto adicionado",
       description: "O livro foi adicionado ao seu carrinho com sucesso!",
     });
-  };
+  } catch (error) {
+    console.error(error);
+    toast({
+      title: "Erro",
+      description: "Não foi possível adicionar o livro ao carrinho.",
+      variant: "destructive",
+    });
+  }
+};
 
   return (
     <div className="min-h-screen bg-background">

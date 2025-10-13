@@ -1,7 +1,7 @@
 // AI-powered book recommendation system (RNF requirement)
 
 import type { Book, Recommendation } from "./types"
-import { mockBooks } from "./mock-data"
+
 
 export interface RecommendationEngine {
   getPersonalizedRecommendations: (userId: string, limit?: number) => Promise<Recommendation[]>
