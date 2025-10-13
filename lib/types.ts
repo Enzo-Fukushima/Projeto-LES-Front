@@ -34,7 +34,6 @@ export type TipoLogradouro =
 
 export interface Endereco {
   id: number;
-<<<<<<< HEAD
   tipoEndereco: TipoEndereco;
   tipoResidencia?: TipoResidencia;
   tipoLogradouro?: TipoLogradouro;
@@ -42,26 +41,13 @@ export interface Endereco {
   numero: string;
   complemento?: string;
   apelido?: string;
-=======
- apelido?: string;
-  tipoResidencia: "CASA" | "APARTAMENTO";
-  tipoLogradouro: "RUA" | "AVENIDA" | "TRAVESSA" | "ALAMEDA" | "OUTRO";
-  tipoEndereco: "ENTREGA" | "COBRANCA";
-  logradouro: string;
-  numero: number;
->>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
   bairro: string;
+  cidade: string;
+  estado: string;
   cep: string;
-<<<<<<< HEAD
   pais?: string;
   principal: boolean;
   user_id: number;
-=======
-  cidade: string;
-  estado: string; // 2 letras
-  pais?: string;
-  clienteId: number; // Para associar ao cliente
->>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
 }
 
 export interface EnderecoDTO {
