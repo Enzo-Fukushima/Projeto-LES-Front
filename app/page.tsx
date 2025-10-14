@@ -28,6 +28,7 @@ export default function HomePage() {
     const fetchBooks = async () => {
       try {
         const data = await livrosService.list();
+        console.log(data);
         setBooks(data);
         setFilteredBooks(data);
       } catch (error) {

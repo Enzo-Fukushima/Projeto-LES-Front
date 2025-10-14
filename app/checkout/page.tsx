@@ -65,7 +65,7 @@ export default function CheckoutPage() {
 
       for (const item of items) {
         try {
-          const book = await livrosService.getById(item.book_id);
+          const book = await livrosService.getById(item.livroId);
           totalWeight += book.peso * item.quantidade;
         } catch (err) {
           console.error("Erro ao buscar livro:", err);
@@ -203,7 +203,7 @@ export default function CheckoutPage() {
                   </CardHeader>
                   <CardContent>
                     <p>Endereço: {deliveryAddress?.logradouro}</p>
-                    <p>Pagamento: {paymentCard?.bandeira} {paymentCard?.numero_mascarado}</p>
+                    <p>Pagamento: {paymentCard?.bandeira} {paymentCard?.numeroCartao}</p>
                     <p>Frete: {shippingOptions.find(s => s.id === selectedShipping)?.label}</p>
                   </CardContent>
                 </Card>
@@ -222,7 +222,7 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent>
                 {items.map(item => (
-                  <p key={item.id}>Livro {item.book_id} x{item.quantidade}</p>
+                  <p key={item.id}>Livro {item.livroId} x{item.quantidade}</p>
                 ))}
                 <Separator />
                 <p>Subtotal: {formatPrice(subtotal)}</p>
