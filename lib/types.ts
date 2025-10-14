@@ -166,13 +166,12 @@ export interface CartaoCredito {
 export interface CartaoCreditoDTO {
   id?: number;
   numeroCartao: string;
-  numeroMascarado?: string;
   nomeImpresso: string;
+  validade: string;
   codigoSeguranca: string;
-  bandeira: BandeiraCartao;
-  clienteId?: number;
+  bandeira: string;
+  clienteId: number;
 }
-
 export interface NovoCardDTO {
   numero: string;
   nomeTitular: string;

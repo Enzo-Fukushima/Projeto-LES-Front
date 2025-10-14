@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import type { EnderecoDTO,  } from "@/lib/types";
+import type { EnderecoDTO } from "@/lib/types";
 import { enderecoService } from "@/services/EnderecoService";
 import { validateCEP, formatCEP } from "@/lib/utils/shipping";
 
@@ -35,6 +35,8 @@ export function AddressForm({
 }: AddressFormProps) {
   const [formData, setFormData] = useState<Omit<CreateEnderecoDTO, "user_id">>({
     tipoEndereco: address?.tipoEndereco || "ENTREGA",
+    tipoResidencia: address?.tipoResidencia || "CASA", // novo campo
+    tipoLogradouro: address?.tipoLogradouro || "RUA", // movido para o topo
     logradouro: address?.logradouro || "",
     numero: address?.numero || "",
     apelido: address?.apelido || "",
@@ -98,13 +100,13 @@ export function AddressForm({
         // Atualiza endereço existente
         savedAddress = await enderecoService.update(address.id, {
           ...formData,
-          user_id: userId,
+          clienteId: userId,
         });
       } else {
         // Cria novo endereço
         savedAddress = await enderecoService.create({
           ...formData,
-          user_id: userId,
+          clienteId: userId,
         });
       }
 
@@ -145,10 +147,37 @@ export function AddressForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="entrega">Entrega</SelectItem>
-                  <SelectItem value="cobranca">Cobrança</SelectItem>
+                  <SelectItem value="ENTREGA">Entrega</SelectItem>
+                  <SelectItem value="COBRANCA">Cobrança</SelectItem>
                 </SelectContent>
               </Select>
+
+              <div className="space-y-2">
+                <Label htmlFor="endereco_entrega.tipoLogradouro">
+                  Tipo Logradouro *
+                </Label>
+                <Select
+                  data-testid="select-tipo-logradouro"
+                  value={formData.tipoLogradouro}
+                  onValueChange={(value) =>
+                    handleChange("tipoLogradouro", value)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RUA">RUA</SelectItem>
+                    <SelectItem value="AVENIDA">AVENIDA</SelectItem>
+                    <SelectItem value="ALAMEDA">ALAMEDA</SelectItem>
+                    <SelectItem value="PRACA">PRAÇA</SelectItem>
+                    <SelectItem value="TRAVESSA">TRAVESSA</SelectItem>
+                    <SelectItem value="VIELA">VIELA</SelectItem>
+                    <SelectItem value="RODOVIA">RODOVIA</SelectItem>
+                    <SelectItem value="CAMINHO">CAMINHO</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -167,6 +196,7 @@ export function AddressForm({
           </div>
 
           {/* Logradouro, Número, Complemento */}
+
           <div className="space-y-2">
             <Label htmlFor="logradouro">Logradouro *</Label>
             <Input
@@ -178,6 +208,18 @@ export function AddressForm({
             {errors.logradouro && (
               <p className="text-sm text-destructive">{errors.logradouro}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="endereco_cobranca.apelido">Apelido</Label>
+            <Input
+              id="endereco_cobranca.apelido"
+              name="endereco_cobranca.apelido"
+              value={formData.apelido}
+              onChange={(e) => handleChange("apelido", e.target.value)}
+              placeholder="Ex: Casa, Trabalho, etc."
+              className="w-full"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

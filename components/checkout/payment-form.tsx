@@ -10,6 +10,13 @@ import { CreditCardIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cartaoService } from "@/services/CartoesService";
 import type { CartaoCreditoDTO } from "@/lib/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PaymentFormProps {
   userId: number;
@@ -86,11 +93,11 @@ export function PaymentForm({
 
     setLoading(true);
     try {
-      const payload: Omit<CartaoCreditoDTO, "id"> = {
-        numero: formData.numero.replace(/\s/g, ""),
-        nomeTitular: formData.nomeTitular,
+      const payload = {
+        numeroCartao: formData.numero.replace(/\s/g, ""),
+        nomeImpresso: formData.nomeTitular,
         validade: formData.validade,
-        cvv: formData.cvv,
+        codigoSeguranca: formData.cvv,
         bandeira: formData.bandeira,
         clienteId: userId,
       };
@@ -160,6 +167,25 @@ export function PaymentForm({
           {/* Validade e CVV */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
+              <div className="space-y-2">
+                <Label htmlFor="endereco_entrega.tipoLogradouro">
+                  Bandeira Cartão *
+                </Label>
+                <Select
+                  data-testid="select-tipo-logradouro"
+                  value={formData.bandeira}
+                  onValueChange={(value) => handleChange("bandeira", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AMEX">AMEX</SelectItem>
+                    <SelectItem value="VISA">VISA</SelectItem>
+                    <SelectItem value="MASTERCARD">MASTERCARD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Label htmlFor="validade">Validade *</Label>
               <Input
                 id="validade"
