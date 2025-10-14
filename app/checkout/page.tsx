@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -18,11 +18,11 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
 import { livrosService } from "@/services/livrosService";
-import { clientesService } from "@/services/ClienteService";
 import { pedidosService } from "@/services/PedidosService";
-import type { Endereco, CartaoCredito, ShippingOption } from "@/lib/types";
+import type { ShippingOption } from "@/lib/types";
 
 import { ArrowLeft } from "lucide-react";
+import { carrinhoService } from "@/services/CarrinhoService";
 
 export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCart();
@@ -31,125 +31,126 @@ export default function CheckoutPage() {
   const { toast } = useToast();
 
   const [step, setStep] = useState<"select" | "address" | "payment" | "shipping" | "review">("select");
-  const [addresses, setAddresses] = useState<Endereco[]>([]);
-  const [cards, setCards] = useState<CartaoCredito[]>([]);
-  const [deliveryAddress, setDeliveryAddress] = useState<Endereco | null>(null);
-  const [paymentCard, setPaymentCard] = useState<CartaoCredito | null>(null);
-  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
-  const [selectedShipping, setSelectedShipping] = useState<string>("");
+  const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
+  const [paymentCard, setPaymentCard] = useState<any>(null);
+  const [shippingOption, setShippingOption] = useState<ShippingOption | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // ✅ Carregar dados do cliente
-  const fetchClientData = useCallback(async () => {
-    if (!user) return router.push("/login");
-    try {
-      const cliente = await clientesService.getById(user.id);
-      setAddresses(cliente.enderecos || []);
-      setCards(cliente.cartoes || []);
-    } catch (err) {
-      console.error("Erro ao buscar dados do cliente:", err);
-      toast({ title: "Erro", description: "Não foi possível carregar os dados do cliente.", variant: "destructive" });
-    }
-  }, [user, router, toast]);
-
+  // Redirecionar se não estiver logado
   useEffect(() => {
-    fetchClientData();
-  }, [fetchClientData]);
-
-  // ✅ Recalcular frete ao alterar endereço ou itens
-  useEffect(() => {
-    if (!deliveryAddress || items.length === 0) return;
-
-    const calculateShippingOptions = async () => {
-      let totalWeight = 0;
-
-      for (const item of items) {
-        try {
-          const book = await livrosService.getById(item.livroId);
-          totalWeight += book.peso * item.quantidade;
-        } catch (err) {
-          console.error("Erro ao buscar livro:", err);
-        }
-      }
-
-      const subtotal = getTotal();
-      const options: ShippingOption[] = [
-        { id: "standard", label: "Padrão", price: subtotal * 0.05 },
-        { id: "express", label: "Expresso", price: subtotal * 0.1 },
-      ];
-
-      setShippingOptions(options);
-      setSelectedShipping(options[0]?.id || "");
-    };
-
-    calculateShippingOptions();
-  }, [deliveryAddress, items, getTotal]);
-
-  // ✅ Seleção e salvamento
-  const handleAddressSelect = (address: Endereco) => setDeliveryAddress(address);
-  const handlePaymentSelect = (card: CartaoCredito) => setPaymentCard(card);
-  const handleSelectionContinue = () => deliveryAddress && paymentCard && setStep("shipping");
-
-  const handleAddressSave = async (addressData: Omit<Endereco, "id" | "user_id">) => {
-    if (!user) return;
-    try {
-      const updated = await clientesService.update(user.id, { novoEndereco: addressData });
-      setAddresses(updated.enderecos);
-      setDeliveryAddress(updated.enderecos.at(-1) || null);
-      setStep("select");
-    } catch (err) {
-      console.error("Erro ao salvar endereço:", err);
+    if (!user) {
+      router.push("/login");
     }
+  }, [user, router]);
+
+  // ✅ Seleção de endereço e cartão
+  const handleSelectionContinue = (address: any, card: any) => {
+    setDeliveryAddress(address);
+    setPaymentCard(card);
+    setStep("shipping");
   };
 
-  const handlePaymentSave = async (cardData: Omit<CartaoCredito, "id" | "user_id">) => {
-    if (!user) return;
-    try {
-      const updated = await clientesService.update(user.id, { novoCartao: cardData });
-      setCards(updated.cartoes);
-      setPaymentCard(updated.cartoes.at(-1) || null);
-      setStep("select");
-    } catch (err) {
-      console.error("Erro ao salvar cartão:", err);
-    }
+  const handleAddressSave = async (addressData: any) => {
+    setDeliveryAddress(addressData);
+    setStep("select");
+    toast({ title: "Sucesso", description: "Endereço salvo com sucesso!" });
   };
 
-  const handleShippingNext = () => selectedShipping && setStep("review");
+  const handlePaymentSave = async (cardData: any) => {
+    setPaymentCard(cardData);
+    setStep("select");
+    toast({ title: "Sucesso", description: "Cartão salvo com sucesso!" });
+  };
+
+  const handleShippingSelect = (option: ShippingOption) => {
+    setShippingOption(option);
+  };
+
+  const handleShippingNext = () => {
+    if (shippingOption) {
+      setStep("review");
+    }
+  };
 
   const handlePlaceOrder = async () => {
-    if (!deliveryAddress || !paymentCard || !user) return;
-
-    setIsProcessing(true);
-    try {
-      const payload = {
-        clienteId: user.id,
-        enderecoEntregaId: deliveryAddress.id,
-        cartaoId: paymentCard.id,
-        freteId: selectedShipping,
-        itens: items.map(i => ({ livroId: i.book_id, quantidade: i.quantidade })),
-      };
-
-      const pedido = await pedidosService.checkout(payload);
-      clearCart();
-
-      toast({ title: "Pedido realizado!", description: "Seu pedido foi criado com sucesso." });
-      router.push(`/order-success?orderId=${pedido.pedidoId}`);
-    } catch (err) {
-      toast({ title: "Erro", description: "Não foi possível finalizar o pedido.", variant: "destructive" });
-      console.error(err);
-    } finally {
-      setIsProcessing(false);
+  try {
+    if (!user || !deliveryAddress || !paymentCard || !shippingOption) {
+      console.error("❌ Dados incompletos para finalizar pedido");
+      return;
     }
-  };
+
+    // 🛒 Busca o carrinho atualizado do cliente
+    const carrinho = await carrinhoService.getByCliente(user.id);
+    console.log("🧺 Carrinho atual:", carrinho);
+
+    // 💰 Calcula total do pedido no frontend
+    const subtotal = getTotal(); // função que soma os preços dos itens
+    const shippingCost = shippingOption?.price || 0;
+    const total = subtotal + shippingCost;
+
+    console.log("💵 Subtotal:", subtotal);
+    console.log("🚚 Frete:", shippingCost);
+    console.log("💰 Total final:", total);
+
+    // ⚙️ Monta payload conforme esperado pelo backend
+    const payload = {
+      clienteId: user.id,
+      enderecoEntregaId: deliveryAddress.id,
+      freteId: shippingOption.id,
+      carrinhoId: carrinho.id,
+      itens: carrinho.itens.map((i: any) => ({
+        livroId: i.livroId ?? i.livro?.id, // compatível com ambos formatos
+        quantidade: i.quantidade,
+      })),
+
+      // 💳 Obrigatório para o backend validar pagamento
+      cartoesPagamento: [
+        {
+          cartaoId: paymentCard.id,
+          valor: total, // o valor pago
+          parcelas: paymentCard.parcelas ?? 1,
+        },
+      ],
+
+      // opcional (backend recalcula, mas ajuda no log)
+      valorTotal: total,
+      valorPago: total,
+    };
+
+    console.log("📦 Payload enviado ao backend:", payload);
+
+    // 📤 Envia para o backend
+    const response = await pedidosService.checkout(payload);
+
+    console.log("✅ Pedido criado com sucesso:", response);
+
+    // (opcional) Redirecionar para página de confirmação
+    router.push(`/`);
+
+  } catch (error: any) {
+  } finally {
+
+  }
+};
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
 
   const subtotal = getTotal();
-  const shippingCost = shippingOptions.find(opt => opt.id === selectedShipping)?.price || 0;
+  const shippingCost = shippingOption?.price || 0;
   const total = subtotal + shippingCost;
 
-  if (!user || items.length === 0) return null;
+  // Verificar se tem dados necessários antes de renderizar
+  if (!user || !user.id || items.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Carregando informações...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,12 +167,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6">
             {step === "select" && (
               <AddressPaymentSelection
-                addresses={addresses}
-                paymentCards={cards}
-                selectedAddressId={deliveryAddress?.id || null}
-                selectedCardId={paymentCard?.id || null}
-                onAddressSelect={handleAddressSelect}
-                onCardSelect={handlePaymentSelect}
+                userId={user.id}
                 onAddNewAddress={() => setStep("address")}
                 onAddNewCard={() => setStep("payment")}
                 onContinue={handleSelectionContinue}
@@ -179,17 +175,28 @@ export default function CheckoutPage() {
             )}
 
             {step === "address" && (
-              <AddressForm title="Novo Endereço" onSave={handleAddressSave} onCancel={() => setStep("select")} />
+              <AddressForm 
+                userId={user.id}
+                onSave={handleAddressSave} 
+                onCancel={() => setStep("select")} 
+              />
             )}
 
             {step === "payment" && (
-              <PaymentForm onSave={handlePaymentSave} onCancel={() => setStep("select")} />
+              <PaymentForm 
+                userId={user.id}
+                onSaveSuccess={handlePaymentSave} 
+                onCancel={() => setStep("select")} 
+              />
             )}
 
             {step === "shipping" && (
               <div className="space-y-4">
-                <ShippingOptions options={shippingOptions} selectedOption={selectedShipping} onOptionChange={setSelectedShipping} />
-                <Button onClick={handleShippingNext} disabled={!selectedShipping}>
+                <ShippingOptions 
+                  selectedOptionId={shippingOption?.id || null}
+                  onOptionSelect={handleShippingSelect}
+                />
+                <Button onClick={handleShippingNext} disabled={!shippingOption}>
                   Continuar para Revisão
                 </Button>
               </div>
@@ -201,10 +208,34 @@ export default function CheckoutPage() {
                   <CardHeader>
                     <CardTitle>Revisão do Pedido</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p>Endereço: {deliveryAddress?.logradouro}</p>
-                    <p>Pagamento: {paymentCard?.bandeira} {paymentCard?.numeroCartao}</p>
-                    <p>Frete: {shippingOptions.find(s => s.id === selectedShipping)?.label}</p>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold mb-2">Endereço de Entrega</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {deliveryAddress?.logradouro}, {deliveryAddress?.numero}
+                        {deliveryAddress?.complemento && ` - ${deliveryAddress.complemento}`}
+                        <br />
+                        {deliveryAddress?.bairro} - {deliveryAddress?.cidade}/{deliveryAddress?.estado}
+                        <br />
+                        CEP: {deliveryAddress?.cep}
+                      </p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold mb-2">Forma de Pagamento</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {paymentCard?.bandeira} •••• {paymentCard?.numero?.slice(-4)}
+                        <br />
+                        {paymentCard?.nomeTitular}
+                      </p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold mb-2">Frete</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {shippingOption?.label} - {formatPrice(shippingCost)}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
                 <Button onClick={handlePlaceOrder} disabled={isProcessing} size="lg" className="w-full">
@@ -220,14 +251,33 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle>Resumo do Pedido</CardTitle>
               </CardHeader>
-              <CardContent>
-                {items.map(item => (
-                  <p key={item.id}>Livro {item.livroId} x{item.quantidade}</p>
-                ))}
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  {items.map(item => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span>{item.titulo} x{item.quantidade}</span>
+                      <span>{formatPrice(item.precoUnitario * item.quantidade)}</span>
+                    </div>
+                  ))}
+                </div>
                 <Separator />
-                <p>Subtotal: {formatPrice(subtotal)}</p>
-                <p>Frete: {formatPrice(shippingCost)}</p>
-                <p className="font-bold">Total: {formatPrice(total)}</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>{formatPrice(subtotal)}</span>
+                  </div>
+                  {shippingCost > 0 && (
+                    <div className="flex justify-between">
+                      <span>Frete:</span>
+                      <span>{formatPrice(shippingCost)}</span>
+                    </div>
+                  )}
+                </div>
+                <Separator />
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span>{formatPrice(total)}</span>
+                </div>
               </CardContent>
             </Card>
           </div>

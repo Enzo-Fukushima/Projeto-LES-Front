@@ -28,23 +28,29 @@ export function AddressPaymentSelection({
 }: AddressPaymentSelectionProps) {
   const [addresses, setAddresses] = useState<EnderecoDTO[]>([]);
   const [cards, setCards] = useState<CartaoCreditoDTO[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null
-  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [loadingCards, setLoadingCards] = useState(false);
   const { toast } = useToast();
 
-  // 🔄 Carregar endereços
+  // 🔄 Carregar endereços - COM VERIFICAÇÃO DE userId
   useEffect(() => {
+    // ⚠️ CRITICAL: Só executa se userId for válido
+    if (!userId || userId === undefined) {
+      console.warn("userId inválido:", userId);
+      return;
+    }
+
     async function fetchAddresses() {
+      console.log("🔍 Buscando endereços para userId:", userId);
       setLoadingAddresses(true);
       try {
         const data = await enderecoService.listByUser(userId);
+        console.log("✅ Endereços carregados:", data);
         setAddresses(data);
       } catch (error) {
-        console.error("Erro ao carregar endereços:", error);
+        console.error("❌ Erro ao carregar endereços:", error);
         toast({
           title: "Erro",
           description: "Não foi possível carregar os endereços.",
@@ -57,15 +63,23 @@ export function AddressPaymentSelection({
     fetchAddresses();
   }, [userId, toast]);
 
-  // 🔄 Carregar cartões
+  // 🔄 Carregar cartões - COM VERIFICAÇÃO DE userId
   useEffect(() => {
+    // ⚠️ CRITICAL: Só executa se userId for válido
+    if (!userId || userId === undefined) {
+      console.warn("userId inválido:", userId);
+      return;
+    }
+
     async function fetchCards() {
+      console.log("🔍 Buscando cartões para userId:", userId);
       setLoadingCards(true);
       try {
         const data = await cartaoService.listByUser(userId);
+        console.log("✅ Cartões carregados:", data);
         setCards(data);
       } catch (error) {
-        console.error("Erro ao carregar cartões:", error);
+        console.error("❌ Erro ao carregar cartões:", error);
         toast({
           title: "Erro",
           description: "Não foi possível carregar os cartões.",
@@ -132,7 +146,6 @@ export function AddressPaymentSelection({
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {address.logradouro}, {address.numero}
-                          {address.complemento && `, ${address.complemento}`}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {address.bairro}, {address.cidade} - {address.estado}
@@ -198,17 +211,14 @@ export function AddressPaymentSelection({
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{card.bandeira}</span>
                           <span className="text-sm text-muted-foreground">
-                            {card.numero.replace(
+                            {card.numeroCartao.replace(
                               /\d{12}(\d{4})/,
                               "**** **** **** $1"
                             )}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {card.nomeTitular}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Válido até {card.validade}
+                          {card.nomeImpresso}
                         </p>
                       </div>
                     </Label>

@@ -11,7 +11,7 @@ export const pedidosService = {
   checkout: async (
     payload: CheckoutRequestDTO
   ): Promise<CheckoutResponseDTO> => {
-    const response = await api.post("/api/pedidos/checkout", payload);
+    const response = await api.post("/pedidos/checkout", payload);
     return response.data;
   },
 

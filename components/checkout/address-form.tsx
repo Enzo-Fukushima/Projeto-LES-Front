@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import type { EnderecoDTO, CreateEnderecoDTO } from "@/lib/types";
+import type { EnderecoDTO,  } from "@/lib/types";
 import { enderecoService } from "@/services/EnderecoService";
 import { validateCEP, formatCEP } from "@/lib/utils/shipping";
 
@@ -37,14 +37,12 @@ export function AddressForm({
     tipoEndereco: address?.tipoEndereco || "ENTREGA",
     logradouro: address?.logradouro || "",
     numero: address?.numero || "",
-    complemento: address?.complemento || "",
     apelido: address?.apelido || "",
     bairro: address?.bairro || "",
     cidade: address?.cidade || "",
     estado: address?.estado || "",
     cep: address?.cep || "",
     pais: address?.pais || "Brasil",
-    principal: address?.principal || false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
