@@ -1,3 +1,4 @@
+import { get } from "http";
 import api from "../lib/api";
 import type {
   CheckoutRequestDTO,
@@ -34,10 +35,20 @@ export const pedidosService = {
     return response.data;
   },
 
+  getAll: async (): Promise<PedidoDTO[]> => {
+    const response = await api.get("/pedidos");
+    return response.data;
+  },
+
   // Lista pedidos de um usuário
   // Lista pedidos de um usuário
  listByUser: async (userId: number): Promise<PedidoDTO[]> => {
     const response = await api.get(`/pedidos/cliente/${userId}`);
     return response.data;
 },
+
+ updateStatus: async (pedidoId: number, status: string): Promise<PedidoDTO> => {
+    const response = await api.patch(`/pedidos/${pedidoId}/status`, { status });
+    return response.data;
+  },
 };

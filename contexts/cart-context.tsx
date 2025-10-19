@@ -1,3 +1,4 @@
+// src/contexts/cart-context.tsx
 "use client";
 
 import {
@@ -6,6 +7,7 @@ import {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 import { carrinhoService } from "@/services/CarrinhoService";
 import { CarrinhoDTO, CarrinhoItemDTO } from "@/lib/types";
@@ -20,7 +22,7 @@ interface CartContextProps {
   clearCart: () => void;
   getItemCount: () => number;
   getTotal: () => number;
-  reloadCart: () => Promise<void>; // ✅ nova função
+  reloadCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextProps | undefined>(undefined);
@@ -30,8 +32,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CarrinhoItemDTO[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Função para recarregar carrinho
-  const reloadCart = async () => {
+  // Função para recarregar carrinho (memoizada)
+  const reloadCart = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
@@ -45,12 +47,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  // Carregar carrinho ao iniciar
+  // Carregar carrinho ao iniciar ou quando user.id mudar
   useEffect(() => {
     reloadCart();
-  }, [user]);
+  }, [reloadCart]);
 
   const addItem = async (livroId: number, quantidade: number) => {
     if (!user?.id) return;
@@ -108,7 +110,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         clearCart,
         getItemCount,
         getTotal,
-        reloadCart, // ✅ exposto no contexto
+        reloadCart,
       }}
     >
       {children}
