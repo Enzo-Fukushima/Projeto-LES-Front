@@ -100,7 +100,7 @@ export const clientesService = {
   ): Promise<ClienteDetalhadoDTO> {
     try {
       const { data } = await api.put<ClienteDetalhadoDTO>(
-        `/clientes/${id}/alterar-senha`,
+        `/clientes/${id}/senha`,
         payload
       );
       return data;

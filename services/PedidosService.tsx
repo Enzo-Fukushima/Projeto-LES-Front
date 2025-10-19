@@ -35,8 +35,9 @@ export const pedidosService = {
   },
 
   // Lista pedidos de um usuário
-  listByUser: async (userId: number): Promise<PedidoDTO[]> => {
-    const response = await api.get(`/api/pedidos`, { params: { userId } });
+  // Lista pedidos de um usuário
+ listByUser: async (userId: number): Promise<PedidoDTO[]> => {
+    const response = await api.get(`/pedidos/cliente/${userId}`);
     return response.data;
-  },
+},
 };

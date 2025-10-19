@@ -1,4 +1,3 @@
-// src/contexts/cart-context.tsx
 "use client";
 
 import {
@@ -21,55 +20,47 @@ interface CartContextProps {
   clearCart: () => void;
   getItemCount: () => number;
   getTotal: () => number;
+  reloadCart: () => Promise<void>; // ✅ nova função
 }
 
 const CartContext = createContext<CartContextProps | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth(); // pega usuário logado
+  const { user } = useAuth();
   const [items, setItems] = useState<CarrinhoItemDTO[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // carregar carrinho ao iniciar
-  useEffect(() => {
-    if (!user?.id) return; // espera o usuário estar definido
-
-    const loadCart = async () => {
-      setLoading(true);
-      try {
-        let carrinho: CarrinhoDTO = await carrinhoService.getByCliente(user.id);
-
-        // se não existir, cria um novo carrinho
-        if (!carrinho) {
-          carrinho = await carrinhoService.create(user.id);
-        }
-
-        setItems(carrinho.itens);
-      } catch (error) {
-        console.error("Erro ao carregar carrinho:", error);
-      } finally {
-        setLoading(false);
+  // Função para recarregar carrinho
+  const reloadCart = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      let carrinho: CarrinhoDTO = await carrinhoService.getByCliente(user.id);
+      if (!carrinho) {
+        carrinho = await carrinhoService.create(user.id);
       }
-    };
+      setItems(carrinho.itens);
+    } catch (error) {
+      console.error("Erro ao recarregar carrinho:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadCart();
+  // Carregar carrinho ao iniciar
+  useEffect(() => {
+    reloadCart();
   }, [user]);
 
   const addItem = async (livroId: number, quantidade: number) => {
     if (!user?.id) return;
-
     setLoading(true);
     try {
       let carrinho = await carrinhoService.getByCliente(user.id);
-
       if (!carrinho) {
         carrinho = await carrinhoService.create(user.id);
       }
-
-      carrinho = await carrinhoService.addItem(carrinho.id, {
-        livroId,
-        quantidade,
-      });
+      carrinho = await carrinhoService.addItem(carrinho.id, { livroId, quantidade });
       setItems(carrinho.itens);
     } finally {
       setLoading(false);
@@ -78,13 +69,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const updateQuantity = async (livroId: number, quantidade: number) => {
     if (!user?.id) return;
-
     setLoading(true);
     try {
-      const carrinho = await carrinhoService.updateItem(user.id, {
-        livroId,
-        quantidade,
-      });
+      const carrinho = await carrinhoService.updateItem(user.id, { livroId, quantidade });
       setItems(carrinho.itens);
     } finally {
       setLoading(false);
@@ -93,7 +80,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const removeItem = async (livroId: number) => {
     if (!user?.id) return;
-
     setLoading(true);
     try {
       const carrinho = await carrinhoService.removeItem(user.id, livroId);
@@ -122,6 +108,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         clearCart,
         getItemCount,
         getTotal,
+        reloadCart, // ✅ exposto no contexto
       }}
     >
       {children}

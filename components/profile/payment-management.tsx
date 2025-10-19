@@ -2,39 +2,22 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, CreditCard } from "lucide-react";
 import type { CartaoCreditoDTO } from "@/lib/types";
 import { cartaoService } from "@/services/CartoesService";
+import { PaymentForm } from "../checkout/payment-form";
 
 interface PaymentManagementProps {
-<<<<<<< HEAD
   userId: number;
   payments: CartaoCreditoDTO[];
-=======
-  userId: number 
->>>>>>> 6f32a6fafdf73cbb4587be3532fa2d236b454a4f
 }
 
-export function PaymentManagement({
-  userId,
-  payments,
-}: PaymentManagementProps) {
+export function PaymentManagement({ userId }: PaymentManagementProps) {
   const [cards, setCards] = useState<CartaoCreditoDTO[]>([]);
-  const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [formData, setFormData] = useState<Omit<CartaoCreditoDTO, "id">>({
-    numero: "",
-    nomeTitular: "",
-    validade: "",
-    cvv: "",
-    bandeira: "",
-    clienteId: userId,
-  });
-
+  const [editingCard, setEditingCard] = useState<CartaoCreditoDTO | null>(null);
   const { toast } = useToast();
 
   // 🔄 Carrega cartões do cliente
@@ -55,82 +38,6 @@ export function PaymentManagement({
     fetchCards();
   }, [userId, toast]);
 
-  const maskCardNumber = (value: string) => {
-    return value
-      .replace(/\D/g, "")
-      .replace(/(\d{4})(?=\d)/g, "$1 ")
-      .trim();
-  };
-
-  const maskExpiry = (value: string) => {
-    return value
-      .replace(/\D/g, "")
-      .replace(/(\d{2})(\d)/, "$1/$2")
-      .slice(0, 5);
-  };
-
-  const getCardBrand = (number: string) => {
-    const clean = number.replace(/\D/g, "");
-    if (clean.startsWith("4")) return "Visa";
-    if (clean.startsWith("5")) return "Mastercard";
-    if (clean.startsWith("3")) return "Amex";
-    return "Outro";
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const bandeira = getCardBrand(formData.numero);
-
-      if (isEditing) {
-        const updated = await cartaoService.update(Number(isEditing), {
-          ...formData,
-          bandeira,
-        });
-        setCards((prev) =>
-          prev.map((card) => (card.id === updated.id ? updated : card))
-        );
-        toast({
-          title: "Sucesso!",
-          description: "Cartão atualizado com sucesso.",
-        });
-      } else {
-        const created = await cartaoService.create({
-          ...formData,
-          bandeira,
-        });
-        setCards((prev) => [...prev, created]);
-        toast({
-          title: "Sucesso!",
-          description: "Cartão adicionado com sucesso.",
-        });
-      }
-
-      resetForm();
-    } catch (error) {
-      console.error("Erro ao salvar cartão:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar o cartão.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleEdit = (card: CartaoCreditoDTO) => {
-    setFormData({
-      numero: card.numero,
-      nomeTitular: card.nomeTitular,
-      validade: card.validade,
-      cvv: "",
-      bandeira: card.bandeira,
-      clienteId: Number(userId),
-    });
-    setIsEditing(card.id?.toString() ?? null);
-    setIsAdding(true);
-  };
-
   const handleDelete = async (id: number) => {
     try {
       await cartaoService.delete(id);
@@ -149,109 +56,67 @@ export function PaymentManagement({
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      numero: "",
-      nomeTitular: "",
-      validade: "",
-      cvv: "",
-      bandeira: "",
-      clienteId: Number(userId),
-    });
-    setIsEditing(null);
-    setIsAdding(false);
+  const formatCardExpiry = (date?: string) => {
+    if (!date) return "—";
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "—";
+    const month = String(d.getMonth() + 1).padStart(2, "0"); // 0-based
+    const year = String(d.getFullYear()).slice(-2);
+    return `${month}/${year}`;
   };
 
-  const maskCardForDisplay = (num: string) => {
-    const clean = num.replace(/\D/g, "");
-    return `**** **** **** ${clean.slice(-4)}`;
+  const handleSaveSuccess = (card: CartaoCreditoDTO) => {
+    setCards((prev) => {
+      const exists = prev.find((c) => c.id === card.id);
+      return exists
+        ? prev.map((c) => (c.id === card.id ? card : c))
+        : [...prev, card];
+    });
+    setIsAdding(false);
+    setEditingCard(null);
   };
+
+  const handleCancel = () => {
+    setIsAdding(false);
+    setEditingCard(null);
+  };
+
+  const maskCardForDisplay = (num?: string) => {
+    if (!num) return "**** **** **** ****";
+    const clean = num.replace(/\D/g, "");
+
+    if (clean.length < 4) return "**** **** **** ****";
+
+    const last4 = clean.slice(-4);
+
+    return `**** **** **** ${last4}`;
+  };
+
+  console.log("Rendered PaymentManagement with cards:", cards);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Seus Cartões</h3>
-        <Button onClick={() => setIsAdding(true)} size="sm">
+        <Button
+          onClick={() => {
+            setEditingCard(null);
+            setIsAdding(true);
+          }}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Cartão
         </Button>
       </div>
 
       {isAdding && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEditing ? "Editar Cartão" : "Novo Cartão"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="numero">Número</Label>
-                  <Input
-                    id="numero"
-                    value={maskCardNumber(formData.numero)}
-                    onChange={(e) =>
-                      setFormData({ ...formData, numero: e.target.value })
-                    }
-                    placeholder="0000 0000 0000 0000"
-                    maxLength={19}
-                    required
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="nomeTitular">Nome do Titular</Label>
-                  <Input
-                    id="nomeTitular"
-                    value={formData.nomeTitular}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        nomeTitular: e.target.value.toUpperCase(),
-                      })
-                    }
-                    placeholder="NOME COMO NO CARTÃO"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="validade">Validade</Label>
-                  <Input
-                    id="validade"
-                    value={maskExpiry(formData.validade)}
-                    onChange={(e) =>
-                      setFormData({ ...formData, validade: e.target.value })
-                    }
-                    placeholder="MM/AA"
-                    maxLength={5}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    value={formData.cvv}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cvv: e.target.value })
-                    }
-                    placeholder="123"
-                    maxLength={4}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit">
-                  {isEditing ? "Atualizar" : "Adicionar"}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <PaymentForm
+          key={editingCard?.id ?? "new"}
+          userId={userId}
+          onSaveSuccess={handleSaveSuccess}
+          onCancel={handleCancel}
+        />
       )}
 
       <div className="grid gap-4">
@@ -263,24 +128,20 @@ export function PaymentManagement({
                   <CreditCard className="h-8 w-8 text-muted-foreground" />
                   <div>
                     <p className="font-medium">
-                      {maskCardForDisplay(card.numero)}
+                      {maskCardForDisplay(card.numeroCartao)}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {card.nomeTitular}
+                      {card.nomeImpresso}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {card.bandeira} • Válido até {card.validade}
-                    </p>
+                  
+                        {card.bandeira} • Válido até{" "}
+                        {formatCardExpiry(card.validade)}
+                      </p>
+           
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(card)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -305,7 +166,12 @@ export function PaymentManagement({
             <p className="text-muted-foreground mb-4">
               Adicione um cartão para facilitar suas compras.
             </p>
-            <Button onClick={() => setIsAdding(true)}>
+            <Button
+              onClick={() => {
+                setEditingCard(null);
+                setIsAdding(true);
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Primeiro Cartão
             </Button>

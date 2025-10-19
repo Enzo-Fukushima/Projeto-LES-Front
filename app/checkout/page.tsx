@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
+const { items, getTotal, clearCart, reloadCart } = useCart();
 
 import { livrosService } from "@/services/livrosService";
 import { pedidosService } from "@/services/PedidosService";
@@ -123,7 +124,7 @@ export default function CheckoutPage() {
     const response = await pedidosService.checkout(payload);
 
     console.log("✅ Pedido criado com sucesso:", response);
-
+    await reloadCart(); // atualiza carrinho globalmente  
     // (opcional) Redirecionar para página de confirmação
     router.push(`/`);
 
