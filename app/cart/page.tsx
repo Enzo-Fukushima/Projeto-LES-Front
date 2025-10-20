@@ -10,24 +10,41 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { carrinhoService } from "@/services/CarrinhoService";
-import type { CarrinhoItemDTO } from "@/lib/types";
+import { livrosService } from "@/services/LivroService"; // serviço usado na homepage
+import type { CarrinhoItemDTO, Livro } from "@/lib/types";
 
 export default function CartPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
   const [cartId, setCartId] = useState<number | null>(null);
-  const [items, setItems] = useState<CarrinhoItemDTO[]>([]);
+  const [items, setItems] = useState<(CarrinhoItemDTO & { livro?: Livro })[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Função para atualizar o carrinho completo do backend
   const refreshCart = async () => {
     if (!user?.id) return;
     try {
       const cart = await carrinhoService.getByCliente(user.id);
       setCartId(cart.id);
-      setItems(cart.itens ?? []);
+
+      // Busca cada livro completo
+      const itensComLivros = await Promise.all(
+        (cart.itens ?? []).map(async (item) => {
+          try {
+            const livro = await livrosService.getById(item.livroId);
+            console.log("Livro buscado:", livro); // log pra debug
+            return { ...item, livro };
+          } catch (err) {
+            console.error(`Erro ao buscar livro ${item.livroId}:`, err);
+            return { ...item };
+          }
+        })
+      );
+
+      setItems(itensComLivros);
     } catch (err) {
       console.error("Erro ao atualizar carrinho:", err);
       toast({
@@ -38,15 +55,12 @@ export default function CartPage() {
     }
   };
 
-  // Carrega o carrinho ao iniciar
   useEffect(() => {
     refreshCart().finally(() => setIsLoading(false));
   }, [user]);
 
-  // Atualiza quantidade
   const handleUpdateQuantity = async (livroId: number, quantidade: number) => {
     if (!cartId) return;
-
     try {
       setIsProcessing(true);
       await carrinhoService.updateItem(cartId, { livroId, quantidade });
@@ -56,10 +70,8 @@ export default function CartPage() {
     }
   };
 
-  // Remove item
   const handleRemoveItem = async (livroId: number) => {
     if (!cartId) return;
-
     try {
       setIsProcessing(true);
       await carrinhoService.removeItem(cartId, livroId);
@@ -69,13 +81,13 @@ export default function CartPage() {
     }
   };
 
-  // Limpar carrinho
   const handleClearCart = async () => {
     if (!cartId) return;
-
     try {
       setIsProcessing(true);
-      await Promise.all(items.map((item) => carrinhoService.removeItem(cartId, item.livroId)));
+      await Promise.all(
+        items.map((item) => carrinhoService.removeItem(cartId, item.livroId))
+      );
       setItems([]);
     } finally {
       setIsProcessing(false);
@@ -83,6 +95,7 @@ export default function CartPage() {
   };
 
   if (isLoading) return <p>Carregando carrinho...</p>;
+
   if (items.length === 0)
     return (
       <div className="min-h-screen bg-background">
@@ -106,17 +119,20 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Carrinho de Compras</h1>
             <p className="text-muted-foreground">
-              {items.length} {items.length === 1 ? "item" : "itens"} no seu carrinho
+              {items.length} {items.length === 1 ? "item" : "itens"} no seu
+              carrinho
             </p>
           </div>
-
-          <Button variant="outline" onClick={handleClearCart} disabled={isProcessing}>
+          <Button
+            variant="outline"
+            onClick={handleClearCart}
+            disabled={isProcessing}
+          >
             Limpar Carrinho
           </Button>
         </div>
@@ -127,6 +143,7 @@ export default function CartPage() {
               <CartItemComponent
                 key={item.livroId}
                 item={item}
+                livro={item.livro}
                 onUpdateQuantity={handleUpdateQuantity}
                 onRemove={handleRemoveItem}
                 disabled={isProcessing}

@@ -21,7 +21,7 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { addItem } = useCart();
   const { toast } = useToast();
-   const { user } = useAuth(); // <-- pega o usuário logado
+  const { user } = useAuth(); // <-- pega o usuário logado
 
   // Buscar todos os livros da API ao carregar a página
   useEffect(() => {
@@ -43,6 +43,8 @@ export default function HomePage() {
     fetchBooks();
   }, [toast]);
 
+  console.log(user);
+
   // Filtrar livros quando a categoria mudar
   useEffect(() => {
     if (selectedCategory) {
@@ -54,23 +56,23 @@ export default function HomePage() {
     }
   }, [selectedCategory, books]);
 
-const handleAddToCart = async (bookId: number) => {
-  try {
-    await addItem(bookId, 1);
+  const handleAddToCart = async (bookId: number) => {
+    try {
+      await addItem(bookId, 1);
 
-    toast({
-      title: "Produto adicionado",
-      description: "O livro foi adicionado ao seu carrinho com sucesso!",
-    });
-  } catch (error) {
-    console.error(error);
-    toast({
-      title: "Erro",
-      description: "Não foi possível adicionar o livro ao carrinho.",
-      variant: "destructive",
-    });
-  }
-};
+      toast({
+        title: "Produto adicionado",
+        description: "O livro foi adicionado ao seu carrinho com sucesso!",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o livro ao carrinho.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">

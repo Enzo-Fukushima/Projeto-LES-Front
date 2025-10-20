@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
-import { carrinhoService } from "@/services/carrinhoService";
+import { carrinhoService } from "@/services/CarrinhoService";
 import type { Livro } from "@/lib/types";
 
 interface ProductCardProps {
@@ -22,6 +22,8 @@ export function ProductCard({
   carrinhoId,
 }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
+
+  console.log(book);
 
   const handleAddToCart = async () => {
     if (onAddToCart) {

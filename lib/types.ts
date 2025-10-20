@@ -8,15 +8,49 @@ export type TipoTelefone = "RESIDENCIAL" | "CELULAR" | "COMERCIAL";
 export type Genero = "MASCULINO" | "FEMININO" | "OUTRO";
 export type TipoEndereco = "ENTREGA" | "COBRANCA";
 export type TipoResidencia = "CASA" | "APARTAMENTO" | "OUTRO";
-export type TipoLogradouro = "RUA" | "AVENIDA" | "TRAVESSA" | "ALAMEDA" | "OUTRO";
-export type BandeiraCartao = "VISA" | "MASTERCARD" | "ELO" | "AMEX" | "HIPERCARD";
+export type TipoLogradouro =
+  | "RUA"
+  | "AVENIDA"
+  | "TRAVESSA"
+  | "ALAMEDA"
+  | "OUTRO";
+export type BandeiraCartao =
+  | "VISA"
+  | "MASTERCARD"
+  | "ELO"
+  | "AMEX"
+  | "HIPERCARD";
 export type TipoCupom = "TROCA" | "PROMOCIONAL";
 
 // Estados brasileiros
-export type Estado = 
-  | "AC" | "AL" | "AP" | "AM" | "BA" | "CE" | "DF" | "ES" | "GO" 
-  | "MA" | "MT" | "MS" | "MG" | "PA" | "PB" | "PR" | "PE" | "PI" 
-  | "RJ" | "RN" | "RS" | "RO" | "RR" | "SC" | "SP" | "SE" | "TO";
+export type Estado =
+  | "AC"
+  | "AL"
+  | "AP"
+  | "AM"
+  | "BA"
+  | "CE"
+  | "DF"
+  | "ES"
+  | "GO"
+  | "MA"
+  | "MT"
+  | "MS"
+  | "MG"
+  | "PA"
+  | "PB"
+  | "PR"
+  | "PE"
+  | "PI"
+  | "RJ"
+  | "RN"
+  | "RS"
+  | "RO"
+  | "RR"
+  | "SC"
+  | "SP"
+  | "SE"
+  | "TO";
 
 // ==========================
 // Cliente / User
@@ -35,7 +69,7 @@ export interface Cliente {
   ranking: number;
   enderecos?: Endereco[];
   cartoes?: CartaoCredito[];
-  senha?: string; 
+  senha?: string;
 }
 
 // Alias para compatibilidade
@@ -205,10 +239,14 @@ export interface CarrinhoDTO {
 export interface CarrinhoItemDTO {
   id?: number;
   clienteId?: number;
+
   livroId: number;
   quantidade: number;
   titulo?: string;
   precoUnitario?: number;
+  autor: string;
+  editora: string;
+  imagemUrl: string;
 }
 
 export interface CarrinhoUpdateItemDTO {

@@ -1,14 +1,13 @@
-"use client";
-
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { CarrinhoItemDTO } from "@/lib/types";
+import type { CarrinhoItemDTO, Livro } from "@/lib/types";
 
 interface CartItemProps {
   item: CarrinhoItemDTO;
+  livro?: Livro; // livro completo
   onUpdateQuantity: (livroId: number, quantity: number) => Promise<void>;
   onRemove: (livroId: number) => Promise<void>;
   disabled?: boolean;
@@ -16,16 +15,22 @@ interface CartItemProps {
 
 export function CartItemComponent({
   item,
+  livro,
   onUpdateQuantity,
   onRemove,
   disabled = false,
 }: CartItemProps) {
-  // Fallbacks para evitar undefined
   const quantidade = item.quantidade ?? 1;
   const precoUnitario = item.precoUnitario ?? 0;
-  const titulo = item.titulo ?? "Livro desconhecido";
-  const autor = item.autor ?? "Autor não informado";
-  const editora = item.editora ?? "Editora não informada";
+
+  const titulo = livro?.titulo ?? item.titulo ?? "Livro desconhecido";
+  const autor = livro?.autor ?? item.autor ?? "Autor não informado";
+
+  // Aqui puxamos editora como string diretamente do objeto do livro
+  const editora =
+    livro?.editora?.nome ?? item.editora ?? "Editora não informada";
+
+  const imagemUrl = livro?.imagem_url ?? item.imagemUrl ?? "/placeholder.svg";
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -42,10 +47,9 @@ export function CartItemComponent({
     <Card>
       <CardContent className="p-4">
         <div className="flex gap-4">
-          {/* Imagem do Livro */}
           <div className="relative w-20 h-28 flex-shrink-0">
             <Image
-              src={item.imagemUrl || "/placeholder.svg"}
+              src={imagemUrl}
               alt={titulo}
               fill
               className="object-cover rounded"
@@ -53,15 +57,12 @@ export function CartItemComponent({
             />
           </div>
 
-          {/* Detalhes do Livro */}
           <div className="flex-1 flex flex-col justify-between space-y-2">
             <div>
               <h3 className="font-semibold text-sm line-clamp-2">{titulo}</h3>
               <p className="text-sm text-muted-foreground">{autor}</p>
-              <p className="text-sm text-muted-foreground">{editora}</p>
             </div>
 
-            {/* Controles de Quantidade e Remover */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
@@ -105,7 +106,6 @@ export function CartItemComponent({
               </Button>
             </div>
 
-            {/* Preço */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
                 {formatPrice(precoUnitario)} cada
