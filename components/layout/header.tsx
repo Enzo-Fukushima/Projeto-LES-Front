@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -22,7 +20,7 @@ import { Search, ShoppingCart, User, LogOut, BookOpen, Settings } from "lucide-r
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("")
   const { user, logout } = useAuth()
-  const { getItemCount } = useCart()
+  const { getItemCount, reloadCart } = useCart() // ✅ pegar reloadCart
   const router = useRouter()
 
   const handleSearch = (e: React.FormEvent) => {
@@ -37,9 +35,15 @@ export function Header() {
     router.push("/")
   }
 
-  const cartItemCount = getItemCount()
+  // Atualiza carrinho sempre que o usuário muda ou após checkout
+  useEffect(() => {
+    if (user?.id) {
+      reloadCart()
+    }
+  }, [user, reloadCart])
 
-  const isAdmin = user?.email === "admin@livruvru.com" || user?.nome === "Admin"
+  const cartItemCount = getItemCount() // sempre pega do estado atualizado
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -82,12 +86,15 @@ export function Header() {
               </Link>
             </Button>
 
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/admin">
-                <Settings className="h-4 w-4 mr-2" />
-                Admin
-              </Link>
-            </Button>
+            {/* Admin */}
+
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Admin
+                </Link>
+              </Button>
+
 
             {/* User Menu */}
             {user ? (

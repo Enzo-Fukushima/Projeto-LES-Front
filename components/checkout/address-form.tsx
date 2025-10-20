@@ -235,16 +235,6 @@ export function AddressForm({
                 <p className="text-sm text-destructive">{errors.numero}</p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="complemento">Complemento</Label>
-              <Input
-                id="complemento"
-                value={formData.complemento}
-                onChange={(e) => handleChange("complemento", e.target.value)}
-                placeholder="Apto, Bloco, etc."
-              />
-            </div>
           </div>
 
           {/* Bairro e Cidade */}

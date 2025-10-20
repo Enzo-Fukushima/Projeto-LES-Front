@@ -30,6 +30,7 @@ export default function OrdersPage() {
         // Supondo que exista endpoint GET /pedidos?clienteId=...
         const response = await pedidosService.listByUser(user.id);
         setOrders(response);
+        console.log(response);
       } catch (err: any) {
         console.error(err);
         setError("Erro ao carregar pedidos.");
@@ -38,6 +39,7 @@ export default function OrdersPage() {
       }
     };
 
+  
     fetchOrders();
   }, [user]);
 

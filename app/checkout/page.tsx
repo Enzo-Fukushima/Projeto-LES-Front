@@ -1,3 +1,4 @@
+// src/app/checkout/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,15 +18,14 @@ import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
-import { livrosService } from "@/services/livrosService";
 import { pedidosService } from "@/services/PedidosService";
+import { carrinhoService } from "@/services/CarrinhoService";
 import type { ShippingOption } from "@/lib/types";
 
 import { ArrowLeft } from "lucide-react";
-import { carrinhoService } from "@/services/CarrinhoService";
 
 export default function CheckoutPage() {
-  const { items, getTotal, clearCart } = useCart();
+  const { items, getTotal, reloadCart } = useCart(); // ✅ hook dentro do componente
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -36,27 +36,27 @@ export default function CheckoutPage() {
   const [shippingOption, setShippingOption] = useState<ShippingOption | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Redirecionar se não estiver logado
+  // Redireciona se não estiver logado
   useEffect(() => {
     if (!user) {
       router.push("/login");
     }
   }, [user, router]);
 
-  // ✅ Seleção de endereço e cartão
+  // Handlers de seleção de endereço e cartão
   const handleSelectionContinue = (address: any, card: any) => {
     setDeliveryAddress(address);
     setPaymentCard(card);
     setStep("shipping");
   };
 
-  const handleAddressSave = async (addressData: any) => {
+  const handleAddressSave = (addressData: any) => {
     setDeliveryAddress(addressData);
     setStep("select");
     toast({ title: "Sucesso", description: "Endereço salvo com sucesso!" });
   };
 
-  const handlePaymentSave = async (cardData: any) => {
+  const handlePaymentSave = (cardData: any) => {
     setPaymentCard(cardData);
     setStep("select");
     toast({ title: "Sucesso", description: "Cartão salvo com sucesso!" });
@@ -72,66 +72,56 @@ export default function CheckoutPage() {
     }
   };
 
+  // Finalizar pedido
   const handlePlaceOrder = async () => {
-  try {
     if (!user || !deliveryAddress || !paymentCard || !shippingOption) {
-      console.error("❌ Dados incompletos para finalizar pedido");
+      toast({ title: "Erro", description: "Dados incompletos para finalizar o pedido." });
       return;
     }
 
-    // 🛒 Busca o carrinho atualizado do cliente
-    const carrinho = await carrinhoService.getByCliente(user.id);
-    console.log("🧺 Carrinho atual:", carrinho);
+    setIsProcessing(true);
 
-    // 💰 Calcula total do pedido no frontend
-    const subtotal = getTotal(); // função que soma os preços dos itens
-    const shippingCost = shippingOption?.price || 0;
-    const total = subtotal + shippingCost;
+    try {
+      const carrinho = await carrinhoService.getByCliente(user.id);
 
-    console.log("💵 Subtotal:", subtotal);
-    console.log("🚚 Frete:", shippingCost);
-    console.log("💰 Total final:", total);
+      const subtotal = getTotal();
+      const shippingCost = shippingOption.price || 0;
+      const total = subtotal + shippingCost;
 
-    // ⚙️ Monta payload conforme esperado pelo backend
-    const payload = {
-      clienteId: user.id,
-      enderecoEntregaId: deliveryAddress.id,
-      freteId: shippingOption.id,
-      carrinhoId: carrinho.id,
-      itens: carrinho.itens.map((i: any) => ({
-        livroId: i.livroId ?? i.livro?.id, // compatível com ambos formatos
-        quantidade: i.quantidade,
-      })),
+      const payload = {
+        clienteId: user.id,
+        enderecoEntregaId: deliveryAddress.id,
+        freteId: shippingOption.id,
+        carrinhoId: carrinho.id,
+        itens: carrinho.itens.map((i: any) => ({
+          livroId: i.livroId ?? i.livro?.id,
+          quantidade: i.quantidade,
+        })),
+        cartoesPagamento: [
+          {
+            cartaoId: paymentCard.id,
+            valor: total,
+            parcelas: paymentCard.parcelas ?? 1,
+          },
+        ],
+        valorTotal: total,
+        valorPago: total,
+      };
 
-      // 💳 Obrigatório para o backend validar pagamento
-      cartoesPagamento: [
-        {
-          cartaoId: paymentCard.id,
-          valor: total, // o valor pago
-          parcelas: paymentCard.parcelas ?? 1,
-        },
-      ],
+      await pedidosService.checkout(payload);
 
-      // opcional (backend recalcula, mas ajuda no log)
-      valorTotal: total,
-      valorPago: total,
-    };
+      // Atualiza carrinho global
+      await reloadCart();
 
-    console.log("📦 Payload enviado ao backend:", payload);
-
-    // 📤 Envia para o backend
-    const response = await pedidosService.checkout(payload);
-
-    console.log("✅ Pedido criado com sucesso:", response);
-
-    // (opcional) Redirecionar para página de confirmação
-    router.push(`/`);
-
-  } catch (error: any) {
-  } finally {
-
-  }
-};
+      toast({ title: "Sucesso", description: "Pedido finalizado com sucesso!" });
+      router.push("/");
+    } catch (error) {
+      console.error("Erro ao finalizar pedido:", error);
+      toast({ title: "Erro", description: "Não foi possível finalizar o pedido." });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
@@ -140,7 +130,6 @@ export default function CheckoutPage() {
   const shippingCost = shippingOption?.price || 0;
   const total = subtotal + shippingCost;
 
-  // Verificar se tem dados necessários antes de renderizar
   if (!user || !user.id || items.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -163,7 +152,7 @@ export default function CheckoutPage() {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Seleção de endereço/cartão e etapas */}
+          {/* Etapas de checkout */}
           <div className="lg:col-span-2 space-y-6">
             {step === "select" && (
               <AddressPaymentSelection
@@ -175,24 +164,24 @@ export default function CheckoutPage() {
             )}
 
             {step === "address" && (
-              <AddressForm 
+              <AddressForm
                 userId={user.id}
-                onSave={handleAddressSave} 
-                onCancel={() => setStep("select")} 
+                onSave={handleAddressSave}
+                onCancel={() => setStep("select")}
               />
             )}
 
             {step === "payment" && (
-              <PaymentForm 
+              <PaymentForm
                 userId={user.id}
-                onSaveSuccess={handlePaymentSave} 
-                onCancel={() => setStep("select")} 
+                onSaveSuccess={handlePaymentSave}
+                onCancel={() => setStep("select")}
               />
             )}
 
             {step === "shipping" && (
               <div className="space-y-4">
-                <ShippingOptions 
+                <ShippingOptions
                   selectedOptionId={shippingOption?.id || null}
                   onOptionSelect={handleShippingSelect}
                 />
@@ -268,7 +257,7 @@ export default function CheckoutPage() {
                   </div>
                   {shippingCost > 0 && (
                     <div className="flex justify-between">
-                      <span>Frete:</span>
+                                <span>Frete:</span>
                       <span>{formatPrice(shippingCost)}</span>
                     </div>
                   )}
@@ -286,3 +275,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
