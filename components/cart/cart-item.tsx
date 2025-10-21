@@ -44,7 +44,7 @@ export function CartItemComponent({
   };
 
   return (
-    <Card>
+    <Card data-testid="cart-item">
       <CardContent className="p-4">
         <div className="flex gap-4">
           <div className="relative w-20 h-28 flex-shrink-0">
@@ -70,6 +70,7 @@ export function CartItemComponent({
                   size="sm"
                   onClick={() => handleChangeQuantity(quantidade - 1)}
                   disabled={quantidade <= 1 || disabled}
+                  data-testid="decrease-quantity"
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
@@ -90,6 +91,8 @@ export function CartItemComponent({
                   size="sm"
                   onClick={() => handleChangeQuantity(quantidade + 1)}
                   disabled={disabled}
+                  aria-label="Increment quantity"
+                  data-testid="increase-quantity"
                 >
                   <Plus className="h-3 w-3" />
                 </Button>
@@ -101,6 +104,9 @@ export function CartItemComponent({
                 onClick={() => onRemove(item.livroId)}
                 disabled={disabled}
                 className="text-destructive hover:text-destructive"
+                data-testid="remove-item"
+                aria-label="Remove item"
+                
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
