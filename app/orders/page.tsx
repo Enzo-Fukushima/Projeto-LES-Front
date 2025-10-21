@@ -39,7 +39,6 @@ export default function OrdersPage() {
       }
     };
 
-  
     fetchOrders();
   }, [user]);
 
@@ -157,7 +156,7 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-6">
           {orders.map((order) => (
-            <Card key={order.id}>
+            <Card key={order.id} data-testid="pedido-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">

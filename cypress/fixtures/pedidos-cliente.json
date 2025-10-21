@@ -1,0 +1,36 @@
+[
+  {
+    "id": 123,
+    "status": "entregue",
+    "dataPedido": "2025-09-25T10:00:00Z",
+    "dataEntrega": "2025-10-01T10:00:00Z",
+    "valorTotal": 120.5,
+    "valorFrete": 10,
+    "codigoRastreamento": "BR123456789BR",
+    "itens": [
+      {
+        "livroId": 1,
+        "titulo": "Clean Code",
+        "quantidade": 1,
+        "precoUnitario": 110.5,
+        "subtotal": 110.5
+      }
+    ]
+  },
+  {
+    "id": 124,
+    "status": "processando",
+    "dataPedido": "2025-10-10T12:00:00Z",
+    "valorTotal": 200.0,
+    "valorFrete": 20,
+    "itens": [
+      {
+        "livroId": 2,
+        "titulo": "Refactoring",
+        "quantidade": 1,
+        "precoUnitario": 180.0,
+        "subtotal": 180.0
+      }
+    ]
+  }
+]
