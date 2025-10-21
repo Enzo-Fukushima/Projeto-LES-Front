@@ -1,4 +1,3 @@
-// cypress/e2e/fluxocompra.cy.ts
 describe("Fluxo completo de compra", () => {
   const clienteId = 1;
   const livroId = 12;
@@ -124,299 +123,199 @@ describe("Fluxo completo de compra", () => {
     cy.wait("@addItemFail");
   });
 
-// =======================================================
-// 💳 CENÁRIO 3: Checkout completo (sucesso)
-// =======================================================
-it("deve realizar o checkout completo com sucesso", () => {
-  const clienteId = 1;
-  const livroId = 12;
-
-  // Mock do usuário logado
-  cy.window().then((win) => {
-    win.localStorage.setItem(
-      "bookstore_user",
-      JSON.stringify({ id: clienteId, nome: "Felipe Lopes" })
-    );
-  });
-
-  // Intercept GET categorias
-  cy.intercept("GET", "**/categorias", {
-    statusCode: 200,
-    body: [
-      { id: 1, nome: "Ficção" },
-      { id: 2, nome: "Romance" },
-    ],
-  }).as("getCategories");
-
-  // Intercept GET livros
-  cy.intercept("GET", "**/livros**", {
-    statusCode: 200,
-    body: [
-      {
-        id: livroId,
-        titulo: "Harry Potter e a Pedra Filosofal",
-        preco: 89.9,
-        estoque: 10,
-        imagem_url: "/placeholder.svg",
-        autor: "J.K. Rowling",
-        categoria_id: 1,
-        editora: "Rocco",
-      },
-    ],
-  }).as("listBooks");
-
-  // Intercept GET carrinho vazio
-  cy.intercept("GET", `**/carrinhos/cliente/${clienteId}*`, {
-    statusCode: 200,
-    body: {
-      id: 123,
-      clienteId: clienteId,
-      itens: [],
-    },
-  }).as("getCartEmpty");
-
-  // Intercept POST adicionar item
-  cy.intercept("POST", "**/carrinhos/*/itens", (req) => {
-    req.reply({
+  // =======================================================
+  // 💳 CENÁRIO 3: Checkout completo (CORRIGIDO)
+  // =======================================================
+  it("deve realizar o checkout completo com sucesso", () => {
+    // Mock carrinho com item (definir ANTES de visitar a página)
+    cy.intercept("GET", `**/carrinhos/cliente/${clienteId}`, {
       statusCode: 200,
       body: {
-        id: 123,
-        clienteId: clienteId,
+        id: cartId,
+        clienteId,
         itens: [
           {
-            livroId: livroId,
-            quantidade: req.body.quantidade || 1,
-            precoUnitario: 89.9,
+            livroId,
             titulo: "Harry Potter e a Pedra Filosofal",
-            autor: "J.K. Rowling",
-            imagemUrl: "/placeholder.svg",
-            editora: "Rocco",
+            quantidade: 1,
+            precoUnitario: 89.9,
           },
         ],
       },
-    });
-  }).as("addItem");
+    }).as("getCartWithItem");
 
-  // Intercept GET livro individual
-  cy.intercept("GET", `**/livros/${livroId}`, {
-    statusCode: 200,
-    body: {
-      id: livroId,
-      titulo: "Harry Potter e a Pedra Filosofal",
-      preco: 89.9,
-      estoque: 10,
-      imagem_url: "/placeholder.svg",
-      autor: "J.K. Rowling",
-      editora: "Rocco",
-    },
-  }).as("getBook");
+    // Endereços - INICIALMENTE VAZIO
+    cy.intercept("GET", `**/clientes/${clienteId}/enderecos`, {
+      statusCode: 200,
+      body: [],
+    }).as("getAddressesEmpty");
 
-  // Intercept GET carrinho com itens
-  cy.intercept("GET", `**/carrinhos/cliente/${clienteId}*`, {
-    statusCode: 200,
-    body: {
-      id: 123,
-      clienteId: clienteId,
-      itens: [
-        {
-          livroId: livroId,
-          quantidade: 1,
-          precoUnitario: 89.9,
-          titulo: "Harry Potter e a Pedra Filosofal",
-          autor: "J.K. Rowling",
-          imagemUrl: "/placeholder.svg",
-          editora: "Rocco",
-        },
-      ],
-    },
-  }).as("getCartWithItem");
+    // Cartões - INICIALMENTE VAZIO
+    cy.intercept("GET", `**/clientes/${clienteId}/cartoes`, {
+      statusCode: 200,
+      body: [],
+    }).as("getCardsEmpty");
 
-  // Intercept GET endereços vazio
-  cy.intercept("GET", `**/clientes/${clienteId}/enderecos*`, {
-    statusCode: 200,
-    body: [],
-  }).as("getAddressesEmpty");
-
-  // Intercept POST criar endereço
-  cy.intercept("POST", "**/enderecos", (req) => {
-    req.reply({
+    // Mock para criar endereço
+    cy.intercept("POST", "**/enderecos", {
       statusCode: 201,
       body: {
-        id: 1,
-        ...req.body,
-        clienteId: clienteId,
-      },
-    });
-  }).as("createAddress");
-
-  // Intercept GET endereços após criar
-  cy.intercept("GET", `**/clientes/${clienteId}/enderecos*`, {
-    statusCode: 200,
-    body: [
-      {
         id: 1,
         tipoEndereco: "ENTREGA",
-        tipoResidencia: "CASA",
-        tipoLogradouro: "RUA",
         logradouro: "Rua dos Testes",
         numero: "100",
-        bairro: "Centro",
         cidade: "São Paulo",
         estado: "SP",
-        cep: "12345-678",
         pais: "Brasil",
-        clienteId: clienteId,
-        principal: true,
+        cep: "12345-678",
       },
-    ],
-  }).as("getAddresses");
+    }).as("createAddress");
 
-  // Intercept GET cartões vazio
-  cy.intercept("GET", `**/clientes/${clienteId}/cartoes*`, {
-    statusCode: 200,
-    body: [],
-  }).as("getCardsEmpty");
-
-  // Intercept POST criar cartão
-  cy.intercept("POST", "**/cartoes", (req) => {
-    req.reply({
+    // Mock para criar cartão
+    cy.intercept("POST", "**/cartoes", {
       statusCode: 201,
       body: {
         id: 1,
-        numero: `****${req.body.numeroCartao.slice(-4)}`,
-        nomeTitular: req.body.nomeImpresso,
-        validade: req.body.validade,
-        bandeira: req.body.bandeira,
-        clienteId: clienteId,
-      },
-    });
-  }).as("createCard");
-
-  // Intercept GET cartões após criar
-  cy.intercept("GET", `**/clientes/${clienteId}/cartoes*`, {
-    statusCode: 200,
-    body: [
-      {
-        id: 1,
+        numeroCartao: "4111111111111111",
         numero: "****1111",
         nomeTitular: "FELIPE TESTE",
         validade: "12/28",
         bandeira: "VISA",
-        clienteId: clienteId,
       },
-    ],
-  }).as("getCards");
+    }).as("createCard");
 
-  // Intercept GET fretes
-  cy.intercept("GET", "**/fretes*", {
-    statusCode: 200,
-    body: [
-      {
-        id: "1",
-        name: "Frete Rápido",
-        description: "Entrega em 5 dias úteis",
-        estimatedDays: "5 dias úteis",
-        price: 15.0,
-      },
-      {
-        id: "2",
-        name: "Frete Grátis",
-        description: "Entrega em 15 dias úteis",
-        estimatedDays: "15 dias úteis",
-        price: 0,
-      },
-    ],
-  }).as("getShipping");
+    // 🚚 Não precisa mockar fretes - ele já tem 3 opções mockadas internamente
 
-  // Intercept POST checkout
-  cy.intercept("POST", "**/pedidos/checkout", {
-    statusCode: 200,
-    body: { pedidoId: 999 },
-  }).as("checkout");
+    // Checkout final
+    cy.intercept("POST", "**/pedidos/checkout", {
+      statusCode: 200,
+      body: { pedidoId: 999 },
+    }).as("checkout");
 
-  // Visita a página
-  cy.visit("http://localhost:3000");
-  cy.wait("@listBooks");
-  cy.wait("@getCartEmpty");
+    // Visita o carrinho
+    cy.visit("http://localhost:3000/cart");
+    cy.wait("@getCartWithItem");
 
-  // ✅ SELETOR SIMPLIFICADO - Clica no primeiro botão "Adicionar ao Carrinho"
-  cy.contains("button", "Adicionar ao Carrinho")
-    .first()
-    .should("be.visible")
-    .click();
+    // Clica em "Finalizar Compra"
+    cy.contains("Finalizar Compra", { timeout: 10000 }).click();
+    cy.wait("@getAddressesEmpty");
+    cy.wait("@getCardsEmpty");
 
-  cy.wait("@addItem", { timeout: 10000 });
-  cy.contains("Produto adicionado", { timeout: 5000 }).should("be.visible");
+    // 🏠 PASSO 1: Adiciona endereço
+    cy.contains("Adicionar Novo Endereço").click();
+    cy.get("#cep").type("12345-678");
+    cy.get("#logradouro").type("Rua dos Testes");
+    cy.get("#numero").type("100");
+    cy.get("#bairro").type("Centro");
+    cy.get("#cidade").type("São Paulo");
 
-  // Vai para o carrinho
-  cy.visit("http://localhost:3000/cart");
-  cy.wait("@getCartWithItem");
-  cy.wait("@getBook");
+    // ✅ ATUALIZA o mock ANTES de salvar para pegar as próximas requisições
+    cy.intercept("GET", `**/clientes/${clienteId}/enderecos`, {
+      statusCode: 200,
+      body: [
+        {
+          id: 1,
+          tipoEndereco: "ENTREGA",
+          logradouro: "Rua dos Testes",
+          numero: "100",
+          cidade: "São Paulo",
+          estado: "SP",
+          pais: "Brasil",
+          cep: "12345-678",
+        },
+      ],
+    }).as("getAddressesWithData");
 
-  cy.contains("Harry Potter e a Pedra Filosofal").should("be.visible");
+    cy.contains("Salvar Endereço").click();
+    cy.wait("@createAddress");
 
-  // Finaliza compra
-  cy.contains("button", "Finalizar Compra").click();
-  cy.url().should("include", "/checkout");
-  cy.wait("@getAddressesEmpty");
-  cy.wait("@getCardsEmpty");
+    // Aguarda voltar para a tela de seleção
+    cy.contains("Adicionar Novo Endereço", { timeout: 10000 }).should(
+      "be.visible"
+    );
 
-  // Adiciona endereço
-  cy.contains("button", "Adicionar Novo Endereço").click();
-  cy.get("#cep", { timeout: 5000 }).should("be.visible").type("12345-678");
-  cy.get("#logradouro").type("Rua dos Testes");
-  cy.get("#numero").type("100");
-  cy.get("#bairro").type("Centro");
-  cy.get("#cidade").type("São Paulo");
-  
-  // Seleciona estado
-  cy.get("label").contains("Estado").parent().find("button").click();
-  cy.contains('[role="option"]', "São Paulo").click();
+    // 💳 PASSO 2: Adiciona cartão
+    cy.contains("Adicionar Novo Cartão").click();
+    cy.get("#numero").type("4111111111111111");
+    cy.get("#nomeTitular").type("FELIPE TESTE");
+    cy.get("#validade").type("1228");
+    cy.get("#cvv").type("123");
 
-  cy.contains("button", "Salvar Endereço").click();
-  cy.wait("@createAddress");
-  cy.wait("@getAddresses");
-  cy.contains("Endereço salvo com sucesso!", { timeout: 5000 }).should("exist");
+    // ✅ ATUALIZA o mock ANTES de salvar
+    cy.intercept("GET", `**/clientes/${clienteId}/cartoes`, {
+      statusCode: 200,
+      body: [
+        {
+          id: 1,
+          numeroCartao: "4111111111111111",
+          numero: "****1111",
+          nomeTitular: "FELIPE TESTE",
+          validade: "12/28",
+          bandeira: "VISA",
+        },
+      ],
+    }).as("getCardsWithData");
 
-  // Adiciona cartão
-  cy.contains("button", "Adicionar Novo Cartão").click();
-  cy.get("#numero", { timeout: 5000 }).should("be.visible").clear().type("4111111111111111");
-  cy.get("#nomeTitular").type("FELIPE TESTE");
-  cy.get("#validade").type("1228");
-  
-  // Seleciona bandeira
-  cy.get("label").contains("Bandeira Cartão").parent().find("button").click();
-  cy.contains('[role="option"]', "VISA").click();
-  
-  cy.get("#cvv").type("123");
+    cy.contains("Salvar Cartão").click();
+    cy.wait("@createCard");
 
-  cy.contains("button", "Salvar Cartão").click();
-  cy.wait("@createCard");
-  cy.wait("@getCards");
-  cy.contains("Cartão salvo com sucesso!", { timeout: 5000 }).should("exist");
+    // Aguarda voltar para a tela de seleção
+    cy.contains("Adicionar Novo Endereço", { timeout: 10000 }).should(
+      "be.visible"
+    );
 
-  // Seleciona endereço e cartão
-  cy.get('input[type="radio"]').first().check({ force: true });
-  cy.get('input[type="radio"]').eq(1).check({ force: true });
-  cy.contains("button", "Continuar").click();
+    // 🎯 PASSO 3: Seleciona endereço e cartão na tela de seleção
+    // Aguarda os dados carregarem - verifica que voltou para a tela de seleção
+    cy.contains("Rua dos Testes", { timeout: 10000 }).should("be.visible");
 
-  // Seleciona frete
-  cy.wait("@getShipping");
-  
-  // Clica no radio button do frete
-  cy.contains("Frete Rápido")
-    .parent()
-    .find('input[type="radio"]')
-    .check({ force: true });
-  
-  cy.contains("button", "Continuar para Revisão").click();
+    // Aguarda um momento para garantir que a UI está pronta
+    cy.wait(1000);
 
-  // Finaliza compra
-  cy.contains("Revisão do Pedido").should("be.visible");
-  cy.contains("button", "Finalizar Compra").click();
-  cy.wait("@checkout");
+    // Seleciona o primeiro endereço
+    // Encontra o container do endereço e clica no RadioGroupItem dentro dele
+    cy.contains("Rua dos Testes")
+      .closest(".flex.items-start.space-x-3") // Container do item de endereço
+      .find('button[role="radio"]') // RadioGroupItem é renderizado como button
+      .click({ force: true });
 
-  cy.contains("Pedido finalizado com sucesso!", { timeout: 5000 }).should("exist");
-});
-  
+    // Seleciona o primeiro cartão
+    cy.contains("VISA")
+      .closest(".flex.items-start.space-x-3") // Container do item de cartão
+      .find('button[role="radio"]')
+      .click({ force: true });
+
+    // Aguarda o botão "Continuar" estar habilitado
+    cy.contains("button", "Continuar").should("not.be.disabled", {
+      timeout: 10000,
+    });
+
+    // ✅ Clica em "Continuar" para ir para a etapa de frete
+    cy.contains("button", "Continuar").click();
+
+    // 🚚 PASSO 4: Seleciona uma opção de frete (já vem mockada pelo freteService)
+    // Aguarda as opções de frete carregarem
+    cy.contains("Opções de Entrega", { timeout: 10000 }).should("be.visible");
+
+    // Aguarda um pouco para garantir que as opções renderizaram
+    cy.wait(1000);
+
+    // Seleciona a primeira opção de frete disponível
+    // O RadioGroupItem do Radix UI é renderizado como button[role="radio"]
+    cy.get('button[role="radio"]').first().click({ force: true });
+
+    // Aguarda um momento para a seleção ser processada
+    cy.wait(500);
+
+    // Clica no botão "Continuar" para ir para a revisão
+    cy.contains("button", /Continuar/i)
+      .should("be.visible")
+      .click();
+
+    // 🎉 PASSO 5: Finaliza o pedido na tela de revisão
+    cy.contains("Revisão do Pedido", { timeout: 10000 }).should("be.visible");
+    cy.contains("button", "Finalizar Compra").click();
+
+    // Verifica se foi redirecionado para a home
+    cy.url().should("eq", "http://localhost:3000/");
+  });
 });

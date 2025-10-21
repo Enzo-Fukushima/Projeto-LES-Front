@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import type { Order } from "@/lib/types"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import type { Order } from "@/lib/types";
 
 interface RecentOrdersProps {
-  orders: Order[]
+  orders: Order[];
 }
 
 export function RecentOrders({ orders }: RecentOrdersProps) {
@@ -11,42 +11,42 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(price)
-  }
+    }).format(price);
+  };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("pt-BR").format(date)
-  }
+    return new Intl.DateTimeFormat("pt-BR").format(date);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "entregue":
-        return "default"
+        return "default";
       case "enviado":
-        return "secondary"
+        return "secondary";
       case "processando":
-        return "outline"
+        return "outline";
       case "cancelado":
-        return "destructive"
+        return "destructive";
       default:
-        return "outline"
+        return "outline";
     }
-  }
+  };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "entregue":
-        return "Entregue"
+        return "Entregue";
       case "enviado":
-        return "Enviado"
+        return "Enviado";
       case "processando":
-        return "Processando"
+        return "Processando";
       case "cancelado":
-        return "Cancelado"
+        return "Cancelado";
       default:
-        return status
+        return status;
     }
-  }
+  };
 
   return (
     <Card className="col-span-3">
@@ -56,19 +56,26 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
       <CardContent>
         <div className="space-y-4">
           {orders.map((order) => (
-            <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
+            <div
+              key={order.id}
+              className="flex items-center justify-between p-3 border rounded-lg"
+            >
               <div className="space-y-1">
                 <p className="font-medium">{order.codigo_pedido}</p>
-                <p className="text-sm text-muted-foreground">{formatDate(order.data_pedido)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(order.data_pedido)}
+                </p>
               </div>
               <div className="text-right space-y-1">
                 <p className="font-medium">{formatPrice(order.valor_total)}</p>
-                <Badge variant={getStatusColor(order.status)}>{getStatusLabel(order.status)}</Badge>
+                <Badge variant={getStatusColor(order.status)}>
+                  {getStatusLabel(order.status)}
+                </Badge>
               </div>
             </div>
           ))}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

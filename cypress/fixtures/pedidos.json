@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "clienteNome": "João Silva",
+    "status": "processando",
+    "valorTotal": 199.9,
+    "codigoRastreamento": null,
+    "dataPedido": "2025-10-18T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "clienteNome": "Maria Oliveira",
+    "status": "enviado",
+    "valorTotal": 299.9,
+    "codigoRastreamento": "BR123456789",
+    "dataPedido": "2025-10-19T12:30:00Z"
+  }
+]
