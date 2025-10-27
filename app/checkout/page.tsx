@@ -10,6 +10,7 @@ import { AddressForm } from "@/components/checkout/address-form";
 import { PaymentForm } from "@/components/checkout/payment-form";
 import { AddressPaymentSelection } from "@/components/checkout/address-payment-selection";
 import { ShippingOptions } from "@/components/checkout/shipping-options";
+import { CouponApplication } from "@/components/checkout/coupon-application";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -20,33 +21,37 @@ import { useToast } from "@/hooks/use-toast";
 
 import { pedidosService } from "@/services/PedidosService";
 import { carrinhoService } from "@/services/CarrinhoService";
-import type { ShippingOption } from "@/lib/types";
+import type { ShippingOption, CouponDTO } from "@/lib/types";
 
 import { ArrowLeft } from "lucide-react";
 
 export default function CheckoutPage() {
-  const { items, getTotal, reloadCart } = useCart(); // ✅ hook dentro do componente
+  const { items, getTotal, reloadCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const [step, setStep] = useState<"select" | "address" | "payment" | "shipping" | "review">("select");
   const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
-  const [paymentCard, setPaymentCard] = useState<any>(null);
+  const [paymentCards, setPaymentCards] = useState<any[]>([]);
   const [shippingOption, setShippingOption] = useState<ShippingOption | null>(null);
+  const [appliedCoupons, setAppliedCoupons] = useState<CouponDTO[]>([]); // ✅ Estado dos cupons
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Redireciona se não estiver logado
+  // ✅ Log para debug
+  useEffect(() => {
+    console.log("🔄 Cupons aplicados atualizados:", appliedCoupons);
+  }, [appliedCoupons]);
+
   useEffect(() => {
     if (!user) {
       router.push("/login");
     }
   }, [user, router]);
 
-  // Handlers de seleção de endereço e cartão
-  const handleSelectionContinue = (address: any, card: any) => {
+  const handleSelectionContinue = (address: any, payments: any[]) => {
     setDeliveryAddress(address);
-    setPaymentCard(card);
+    setPaymentCards(payments);
     setStep("shipping");
   };
 
@@ -57,7 +62,6 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentSave = (cardData: any) => {
-    setPaymentCard(cardData);
     setStep("select");
     toast({ title: "Sucesso", description: "Cartão salvo com sucesso!" });
   };
@@ -72,9 +76,21 @@ export default function CheckoutPage() {
     }
   };
 
-  // Finalizar pedido
+  // ✅ Handler para atualização de cupons
+  const handleCouponsChange = (coupons: CouponDTO[]) => {
+    setAppliedCoupons(coupons);
+  };
+
+  // ✅ Calcular desconto total dos cupons
+  const calculateCouponDiscount = (coupon: CouponDTO, subtotal: number): number => {
+    if (coupon.percentual) {
+      return (subtotal * coupon.valor) / 100;
+    }
+    return coupon.valor;
+  };
+
   const handlePlaceOrder = async () => {
-    if (!user || !deliveryAddress || !paymentCard || !shippingOption) {
+    if (!user || !deliveryAddress || paymentCards.length === 0 || !shippingOption) {
       toast({ title: "Erro", description: "Dados incompletos para finalizar o pedido." });
       return;
     }
@@ -83,10 +99,16 @@ export default function CheckoutPage() {
 
     try {
       const carrinho = await carrinhoService.getByCliente(user.id);
-
       const subtotal = getTotal();
       const shippingCost = shippingOption.price || 0;
-      const total = subtotal + shippingCost;
+      
+      // ✅ Calcular desconto total
+      const totalCouponDiscount = appliedCoupons.reduce(
+        (sum, coupon) => sum + calculateCouponDiscount(coupon, subtotal),
+        0
+      );
+      
+      const total = subtotal + shippingCost - totalCouponDiscount;
 
       const payload = {
         clienteId: user.id,
@@ -97,20 +119,17 @@ export default function CheckoutPage() {
           livroId: i.livroId ?? i.livro?.id,
           quantidade: i.quantidade,
         })),
-        cartoesPagamento: [
-          {
-            cartaoId: paymentCard.id,
-            valor: total,
-            parcelas: paymentCard.parcelas ?? 1,
-          },
-        ],
+        cartoesPagamento: paymentCards.map((payment) => ({
+          cartaoId: payment.card.id,
+          valor: payment.amount,
+          parcelas: payment.card.parcelas ?? 1,
+        })),
         valorTotal: total,
         valorPago: total,
+        cupons: appliedCoupons, // ✅ Enviar cupons para o backend
       };
 
       await pedidosService.checkout(payload);
-
-      // Atualiza carrinho global
       await reloadCart();
 
       toast({ title: "Sucesso", description: "Pedido finalizado com sucesso!" });
@@ -128,7 +147,14 @@ export default function CheckoutPage() {
 
   const subtotal = getTotal();
   const shippingCost = shippingOption?.price || 0;
-  const total = subtotal + shippingCost;
+  
+  // ✅ Calcular desconto total
+  const totalCouponDiscount = appliedCoupons.reduce(
+    (sum, coupon) => sum + calculateCouponDiscount(coupon, subtotal),
+    0
+  );
+  
+  const total = subtotal + shippingCost - totalCouponDiscount;
 
   if (!user || !user.id || items.length === 0) {
     return (
@@ -152,11 +178,11 @@ export default function CheckoutPage() {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Etapas de checkout */}
           <div className="lg:col-span-2 space-y-6">
             {step === "select" && (
               <AddressPaymentSelection
                 userId={user.id}
+                totalAmount={total}
                 onAddNewAddress={() => setStep("address")}
                 onAddNewCard={() => setStep("payment")}
                 onContinue={handleSelectionContinue}
@@ -185,6 +211,13 @@ export default function CheckoutPage() {
                   selectedOptionId={shippingOption?.id || null}
                   onOptionSelect={handleShippingSelect}
                 />
+                
+                {/* ✅ Componente de Cupons - Passa apenas o subtotal para validação */}
+                <CouponApplication
+                  totalAmount={subtotal}
+                  onCouponsChange={handleCouponsChange}
+                />
+                
                 <Button onClick={handleShippingNext} disabled={!shippingOption}>
                   Continuar para Revisão
                 </Button>
@@ -212,11 +245,13 @@ export default function CheckoutPage() {
                     <Separator />
                     <div>
                       <h3 className="font-semibold mb-2">Forma de Pagamento</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {paymentCard?.bandeira} •••• {paymentCard?.numero?.slice(-4)}
-                        <br />
-                        {paymentCard?.nomeTitular}
-                      </p>
+                      {paymentCards.map((payment, index) => (
+                        <div key={index} className="text-sm text-muted-foreground mb-2">
+                          {payment.card.bandeira} •••• {payment.card.numeroCartao?.slice(-4)}
+                          <br />
+                          {payment.card.nomeImpresso} - {formatPrice(payment.amount)}
+                        </div>
+                      ))}
                     </div>
                     <Separator />
                     <div>
@@ -225,6 +260,21 @@ export default function CheckoutPage() {
                         {shippingOption?.label} - {formatPrice(shippingCost)}
                       </p>
                     </div>
+                    
+                    {/* ✅ Mostrar cupons aplicados */}
+                    {appliedCoupons.length > 0 && (
+                      <>
+                        <Separator />
+                        <div>
+                          <h3 className="font-semibold mb-2">Cupons Aplicados</h3>
+                          {appliedCoupons.map((coupon) => (
+                            <div key={coupon.id} className="text-sm text-muted-foreground mb-2">
+                              {coupon.codigo} - {formatPrice(calculateCouponDiscount(coupon, subtotal))} de desconto
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
                 <Button onClick={handlePlaceOrder} disabled={isProcessing} size="lg" className="w-full">
@@ -257,8 +307,15 @@ export default function CheckoutPage() {
                   </div>
                   {shippingCost > 0 && (
                     <div className="flex justify-between">
-                                <span>Frete:</span>
+                      <span>Frete:</span>
                       <span>{formatPrice(shippingCost)}</span>
+                    </div>
+                  )}
+                  {/* ✅ Mostrar desconto */}
+                  {totalCouponDiscount > 0 && (
+                    <div className="flex justify-between text-green-600 dark:text-green-400">
+                      <span>Descontos:</span>
+                      <span>-{formatPrice(totalCouponDiscount)}</span>
                     </div>
                   )}
                 </div>
@@ -275,4 +332,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-

@@ -287,6 +287,18 @@ export interface CupomUseDTO {
   tipoCupom?: TipoCupom;
 }
 
+export interface CouponDTO {
+  id: number;
+  codigo: string;
+  tipo: string;
+  valor: number;
+  percentual: boolean;
+  valorMinimo?: number;
+  ativo: boolean;
+  singleUse?: boolean;
+  dataValidade?: string;
+}
+
 // ==========================
 // Checkout e Pedidos
 // ==========================
