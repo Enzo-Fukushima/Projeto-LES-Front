@@ -31,7 +31,7 @@ export const pedidosService = {
 
   // Consulta pedido por ID
   getById: async (id: number): Promise<PedidoDTO> => {
-    const response = await api.get(`/api/pedidos/${id}`);
+    const response = await api.get(`/pedidos/${id}`);
     return response.data;
   },
 

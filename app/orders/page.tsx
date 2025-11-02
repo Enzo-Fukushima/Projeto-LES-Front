@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Package, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { ExchangeRequestDialog } from "@/components/exchange-request-dialog";
+import { ExchangeRequestDialog } from "@/components/orders/exchange-request-dialog";
 import { pedidosService } from "@/services/PedidosService";
 import type { PedidoDTO } from "@/lib/types";
 

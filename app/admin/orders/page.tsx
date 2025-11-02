@@ -69,6 +69,7 @@ export default function AdminOrders() {
       try {
         const data = await pedidosService.getAll();
         setOrders(data);
+        console.log("Pedidos carregados:", data);
       } catch (error) {
         console.error("Erro ao buscar pedidos:", error);
         toast({
@@ -214,7 +215,7 @@ export default function AdminOrders() {
                       </TableCell>
 
                       <TableCell>
-                        <p>{formatDate(order.dataPedido)}</p>
+                        <p>{formatDate(order.dataCriacao)}</p>
                         {order.dataEntrega && (
                           <p className="text-sm text-muted-foreground">
                             Entregue: {formatDate(order.dataEntrega)}
