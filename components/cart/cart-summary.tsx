@@ -11,7 +11,7 @@ export function CartSummary() {
   const { getTotal, getItemCount } = useCart();
 
   const subtotal = getTotal();
-  const shipping = subtotal > 100 ? 0 : 15;
+  const shipping = subtotal > 100 ? 0 : 10;
   const total = subtotal + shipping;
   const itemCount = getItemCount();
 
