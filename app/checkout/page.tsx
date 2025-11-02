@@ -9,7 +9,6 @@ import { Header } from "@/components/layout/header";
 import { AddressForm } from "@/components/checkout/address-form";
 import { PaymentForm } from "@/components/checkout/payment-form";
 import { AddressPaymentSelection } from "@/components/checkout/address-payment-selection";
-import { ShippingOptions } from "@/components/checkout/shipping-options";
 import { CouponApplication } from "@/components/checkout/coupon-application";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,9 +20,13 @@ import { useToast } from "@/hooks/use-toast";
 
 import { pedidosService } from "@/services/PedidosService";
 import { carrinhoService } from "@/services/CarrinhoService";
-import type { ShippingOption, CouponDTO } from "@/lib/types";
+import type { CouponDTO } from "@/lib/types";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Truck } from "lucide-react";
+
+// ✅ Configuração do frete
+const FIXED_SHIPPING_COST = 10.00; // R$ 10,00
+const FREE_SHIPPING_THRESHOLD = 100.00; // Frete grátis acima de R$ 100,00
 
 export default function CheckoutPage() {
   const { items, getTotal, reloadCart } = useCart();
@@ -31,14 +34,12 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [step, setStep] = useState<"select" | "address" | "payment" | "shipping" | "review">("select");
+  const [step, setStep] = useState<"select" | "address" | "payment" | "review">("select");
   const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
   const [paymentCards, setPaymentCards] = useState<any[]>([]);
-  const [shippingOption, setShippingOption] = useState<ShippingOption | null>(null);
-  const [appliedCoupons, setAppliedCoupons] = useState<CouponDTO[]>([]); // ✅ Estado dos cupons
+  const [appliedCoupons, setAppliedCoupons] = useState<CouponDTO[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // ✅ Log para debug
   useEffect(() => {
     console.log("🔄 Cupons aplicados atualizados:", appliedCoupons);
   }, [appliedCoupons]);
@@ -52,7 +53,7 @@ export default function CheckoutPage() {
   const handleSelectionContinue = (address: any, payments: any[]) => {
     setDeliveryAddress(address);
     setPaymentCards(payments);
-    setStep("shipping");
+    setStep("review"); // ✅ Vai direto para review, sem step de shipping
   };
 
   const handleAddressSave = (addressData: any) => {
@@ -66,22 +67,10 @@ export default function CheckoutPage() {
     toast({ title: "Sucesso", description: "Cartão salvo com sucesso!" });
   };
 
-  const handleShippingSelect = (option: ShippingOption) => {
-    setShippingOption(option);
-  };
-
-  const handleShippingNext = () => {
-    if (shippingOption) {
-      setStep("review");
-    }
-  };
-
-  // ✅ Handler para atualização de cupons
   const handleCouponsChange = (coupons: CouponDTO[]) => {
     setAppliedCoupons(coupons);
   };
 
-  // ✅ Calcular desconto total dos cupons
   const calculateCouponDiscount = (coupon: CouponDTO, subtotal: number): number => {
     if (coupon.percentual) {
       return (subtotal * coupon.valor) / 100;
@@ -89,8 +78,12 @@ export default function CheckoutPage() {
     return coupon.valor;
   };
 
+  // ✅ Calcular frete baseado no subtotal
+  const subtotal = getTotal();
+  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FIXED_SHIPPING_COST;
+
   const handlePlaceOrder = async () => {
-    if (!user || !deliveryAddress || paymentCards.length === 0 || !shippingOption) {
+    if (!user || !deliveryAddress || paymentCards.length === 0) {
       toast({ title: "Erro", description: "Dados incompletos para finalizar o pedido." });
       return;
     }
@@ -99,10 +92,7 @@ export default function CheckoutPage() {
 
     try {
       const carrinho = await carrinhoService.getByCliente(user.id);
-      const subtotal = getTotal();
-      const shippingCost = shippingOption.price || 0;
       
-      // ✅ Calcular desconto total
       const totalCouponDiscount = appliedCoupons.reduce(
         (sum, coupon) => sum + calculateCouponDiscount(coupon, subtotal),
         0
@@ -113,7 +103,7 @@ export default function CheckoutPage() {
       const payload = {
         clienteId: user.id,
         enderecoEntregaId: deliveryAddress.id,
-        freteId: shippingOption.id,
+        freteId: null, // ✅ Não tem mais ID de frete
         carrinhoId: carrinho.id,
         itens: carrinho.itens.map((i: any) => ({
           livroId: i.livroId ?? i.livro?.id,
@@ -126,7 +116,7 @@ export default function CheckoutPage() {
         })),
         valorTotal: total,
         valorPago: total,
-        cupons: appliedCoupons, // ✅ Enviar cupons para o backend
+        cupons: appliedCoupons,
       };
 
       await pedidosService.checkout(payload);
@@ -145,10 +135,6 @@ export default function CheckoutPage() {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
 
-  const subtotal = getTotal();
-  const shippingCost = shippingOption?.price || 0;
-  
-  // ✅ Calcular desconto total
   const totalCouponDiscount = appliedCoupons.reduce(
     (sum, coupon) => sum + calculateCouponDiscount(coupon, subtotal),
     0
@@ -205,27 +191,40 @@ export default function CheckoutPage() {
               />
             )}
 
-            {step === "shipping" && (
+            {step === "review" && (
               <div className="space-y-4">
-                <ShippingOptions
-                  selectedOptionId={shippingOption?.id || null}
-                  onOptionSelect={handleShippingSelect}
-                />
-                
-                {/* ✅ Componente de Cupons - Passa apenas o subtotal para validação */}
+                {/* ✅ Card de Informação do Frete */}
+                <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <Truck className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                          Informações de Frete
+                        </h3>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          {subtotal >= FREE_SHIPPING_THRESHOLD ? (
+                            <>
+                              🎉 <strong>Frete Grátis!</strong> Seu pedido atingiu o valor mínimo de {formatPrice(FREE_SHIPPING_THRESHOLD)}
+                            </>
+                          ) : (
+                            <>
+                              Frete fixo de {formatPrice(FIXED_SHIPPING_COST)}. 
+                              Faltam apenas {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} para frete grátis!
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ✅ Componente de Cupons */}
                 <CouponApplication
                   totalAmount={subtotal}
                   onCouponsChange={handleCouponsChange}
                 />
-                
-                <Button onClick={handleShippingNext} disabled={!shippingOption}>
-                  Continuar para Revisão
-                </Button>
-              </div>
-            )}
 
-            {step === "review" && (
-              <div className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>Revisão do Pedido</CardTitle>
@@ -253,15 +252,7 @@ export default function CheckoutPage() {
                         </div>
                       ))}
                     </div>
-                    <Separator />
-                    <div>
-                      <h3 className="font-semibold mb-2">Frete</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {shippingOption?.label} - {formatPrice(shippingCost)}
-                      </p>
-                    </div>
-                    
-                    {/* ✅ Mostrar cupons aplicados */}
+
                     {appliedCoupons.length > 0 && (
                       <>
                         <Separator />
@@ -305,13 +296,38 @@ export default function CheckoutPage() {
                     <span>Subtotal:</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
-                  {shippingCost > 0 && (
-                    <div className="flex justify-between">
-                      <span>Frete:</span>
+                  
+                  {/* ✅ Frete sempre visível */}
+                  <div className="flex justify-between">
+                    <span>Frete:</span>
+                    {shippingCost === 0 ? (
+                      <span className="text-green-600 dark:text-green-400 font-medium">
+                        Grátis 🎉
+                      </span>
+                    ) : (
                       <span>{formatPrice(shippingCost)}</span>
+                    )}
+                  </div>
+
+                  {/* ✅ Indicador de progresso para frete grátis */}
+                  {subtotal < FREE_SHIPPING_THRESHOLD && (
+                    <div className="pt-2">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>Progresso para frete grátis:</span>
+                        <span>{((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all"
+                          style={{ width: `${Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Faltam {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} para frete grátis
+                      </p>
                     </div>
                   )}
-                  {/* ✅ Mostrar desconto */}
+
                   {totalCouponDiscount > 0 && (
                     <div className="flex justify-between text-green-600 dark:text-green-400">
                       <span>Descontos:</span>
