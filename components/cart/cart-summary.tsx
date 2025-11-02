@@ -16,7 +16,10 @@ export function CartSummary() {
   const itemCount = getItemCount();
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(price);
 
   return (
     <Card className="sticky top-4">
@@ -59,7 +62,13 @@ export function CartSummary() {
         </div>
 
         {/* Ações */}
-        <Button className="w-full" size="lg" disabled={itemCount === 0} asChild>
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={itemCount === 0}
+          asChild
+          data-cy={`finalizar`}
+        >
           <Link href="/checkout">Finalizar Compra</Link>
         </Button>
 

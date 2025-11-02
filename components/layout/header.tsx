@@ -1,49 +1,55 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useAuth } from "@/contexts/auth-context"
-import { useCart } from "@/contexts/cart-context"
-import { Search, ShoppingCart, User, LogOut, BookOpen, Settings } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/auth-context";
+import { useCart } from "@/contexts/cart-context";
+import {
+  Search,
+  ShoppingCart,
+  User,
+  LogOut,
+  BookOpen,
+  Settings,
+} from "lucide-react";
 
 export function Header() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const { user, logout } = useAuth()
-  const { getItemCount, reloadCart } = useCart() // ✅ pegar reloadCart
-  const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState("");
+  const { user, logout } = useAuth();
+  const { getItemCount, reloadCart } = useCart(); // ✅ pegar reloadCart
+  const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
-  }
+  };
 
   const handleLogout = () => {
-    logout()
-    router.push("/")
-  }
+    logout();
+    router.push("/");
+  };
 
   // Atualiza carrinho sempre que o usuário muda ou após checkout
   useEffect(() => {
     if (user?.id) {
-      reloadCart()
+      reloadCart();
     }
-  }, [user, reloadCart])
+  }, [user, reloadCart]);
 
-  const cartItemCount = getItemCount() // sempre pega do estado atualizado
-
+  const cartItemCount = getItemCount(); // sempre pega do estado atualizado
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -72,7 +78,7 @@ export function Header() {
           {/* Navigation */}
           <div className="flex items-center gap-4">
             {/* Cart */}
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" asChild data-cy={`carrinho`}>
               <Link href="/cart" className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 {cartItemCount > 0 && (
@@ -88,13 +94,12 @@ export function Header() {
 
             {/* Admin */}
 
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/admin">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Admin
-                </Link>
-              </Button>
-
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin">
+                <Settings className="h-4 w-4 mr-2" />
+                Admin
+              </Link>
+            </Button>
 
             {/* User Menu */}
             {user ? (
@@ -133,5 +138,5 @@ export function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

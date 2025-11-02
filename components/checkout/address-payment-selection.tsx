@@ -36,12 +36,14 @@ export function AddressPaymentSelection({
 }: AddressPaymentSelectionProps) {
   const [addresses, setAddresses] = useState<EnderecoDTO[]>([]);
   const [cards, setCards] = useState<CartaoCreditoDTO[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
+
   // Novo estado para múltiplos cartões
   const [selectedCards, setSelectedCards] = useState<PaymentCard[]>([]);
   const [useMultipleCards, setUseMultipleCards] = useState(false);
-  
+
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [loadingCards, setLoadingCards] = useState(false);
   const { toast } = useToast();
@@ -131,10 +133,7 @@ export function AddressPaymentSelection({
     const usedAmount = selectedCards.reduce((sum, sc) => sum + sc.amount, 0);
     const remainingAmount = totalAmount - usedAmount;
 
-    setSelectedCards([
-      ...selectedCards,
-      { card, amount: remainingAmount },
-    ]);
+    setSelectedCards([...selectedCards, { card, amount: remainingAmount }]);
   };
 
   // Remover cartão da seleção
@@ -143,7 +142,10 @@ export function AddressPaymentSelection({
   };
 
   // Atualizar valor do cartão
-  const handleUpdateAmount = (cardId: number | undefined, newAmount: number) => {
+  const handleUpdateAmount = (
+    cardId: number | undefined,
+    newAmount: number
+  ) => {
     setSelectedCards(
       selectedCards.map((sc) =>
         sc.card.id === cardId ? { ...sc, amount: Math.max(0, newAmount) } : sc
@@ -152,13 +154,13 @@ export function AddressPaymentSelection({
   };
 
   // Constantes de validação
-  const VALOR_MINIMO_POR_CARTAO = 10.00;
-  
+  const VALOR_MINIMO_POR_CARTAO = 10.0;
+
   // Verificar se todos os cartões têm valor mínimo
   const cartoesComValorInsuficiente = selectedCards.filter(
-    sc => sc.amount < VALOR_MINIMO_POR_CARTAO && sc.amount > 0
+    (sc) => sc.amount < VALOR_MINIMO_POR_CARTAO && sc.amount > 0
   );
-  
+
   const hasValorMinimoInvalido = cartoesComValorInsuficiente.length > 0;
 
   // Calcular totais
@@ -170,19 +172,19 @@ export function AddressPaymentSelection({
     (a) => a.id?.toString() === selectedAddressId
   );
 
-  const canContinue = 
-    !!selectedAddress && 
-    selectedCards.length > 0 && 
-    isAmountValid;
+  const canContinue =
+    !!selectedAddress && selectedCards.length > 0 && isAmountValid;
 
   // Alternar entre 1 e 2 cartões
   const toggleMultipleCards = () => {
     if (useMultipleCards) {
       // Voltar para 1 cartão - manter apenas o primeiro
-      setSelectedCards(selectedCards.slice(0, 1).map(sc => ({
-        ...sc,
-        amount: totalAmount
-      })));
+      setSelectedCards(
+        selectedCards.slice(0, 1).map((sc) => ({
+          ...sc,
+          amount: totalAmount,
+        }))
+      );
     }
     setUseMultipleCards(!useMultipleCards);
   };
@@ -274,11 +276,7 @@ export function AddressPaymentSelection({
               <CreditCard className="h-5 w-5" />
               Forma de Pagamento
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleMultipleCards}
-            >
+            <Button variant="outline" size="sm" onClick={toggleMultipleCards}>
               {useMultipleCards ? "Usar 1 Cartão" : "Usar 2 Cartões"}
             </Button>
           </div>
@@ -297,13 +295,21 @@ export function AddressPaymentSelection({
                 <Separator className="my-2" />
                 <div className="flex justify-between items-center text-sm">
                   <span>Valor Pago:</span>
-                  <span className={totalPaid > totalAmount ? "text-red-500" : ""}>
+                  <span
+                    className={totalPaid > totalAmount ? "text-red-500" : ""}
+                  >
                     R$ {totalPaid.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span>Restante:</span>
-                  <span className={remainingAmount > 0.01 ? "text-orange-500 font-medium" : "text-green-500"}>
+                  <span
+                    className={
+                      remainingAmount > 0.01
+                        ? "text-orange-500 font-medium"
+                        : "text-green-500"
+                    }
+                  >
                     R$ {remainingAmount.toFixed(2)}
                   </span>
                 </div>
@@ -323,7 +329,9 @@ export function AddressPaymentSelection({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{payment.card.bandeira}</span>
+                        <span className="font-medium">
+                          {payment.card.bandeira}
+                        </span>
                         <span className="text-sm text-muted-foreground">
                           {payment.card.numeroCartao.replace(
                             /\d{12}(\d{4})/,
@@ -343,9 +351,12 @@ export function AddressPaymentSelection({
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
-                    <Label htmlFor={`amount-${payment.card.id}`} className="text-sm">
+                    <Label
+                      htmlFor={`amount-${payment.card.id}`}
+                      className="text-sm"
+                    >
                       Valor:
                     </Label>
                     <div className="flex items-center gap-1 flex-1">
@@ -382,10 +393,15 @@ export function AddressPaymentSelection({
               ) : cards.length > 0 ? (
                 <div className="space-y-3">
                   <h4 className="font-medium text-sm">
-                    {selectedCards.length > 0 ? "Adicionar outro cartão:" : "Selecione um cartão:"}
+                    {selectedCards.length > 0
+                      ? "Adicionar outro cartão:"
+                      : "Selecione um cartão:"}
                   </h4>
                   {cards
-                    .filter((card) => !selectedCards.some((sc) => sc.card.id === card.id))
+                    .filter(
+                      (card) =>
+                        !selectedCards.some((sc) => sc.card.id === card.id)
+                    )
                     .map((card) => (
                       <div
                         key={card.id}
@@ -406,7 +422,11 @@ export function AddressPaymentSelection({
                             {card.nomeImpresso}
                           </p>
                         </div>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-cy={`cartao-${card.id}`}
+                        >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
@@ -439,12 +459,11 @@ export function AddressPaymentSelection({
           }
           disabled={!canContinue}
           size="lg"
+          data-cy={"continuar"}
         >
           Continuar para Entrega
           {!isAmountValid && selectedCards.length > 0 && (
-            <span className="ml-2 text-xs">
-              (Ajuste os valores)
-            </span>
+            <span className="ml-2 text-xs">(Ajuste os valores)</span>
           )}
         </Button>
       </div>

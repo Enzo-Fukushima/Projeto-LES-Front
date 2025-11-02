@@ -108,6 +108,7 @@ export function ProductCard({
           className="w-full"
           disabled={!isInStock || isAdding}
           onClick={handleAddToCart}
+          data-cy={`add-to-cart-${book.id}`} // ✅ atributo único
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
           {isAdding
