@@ -267,7 +267,6 @@ export default function AdminOrders() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="processando">Processando</SelectItem>
                 <SelectItem value="enviado">Enviado</SelectItem>
                 <SelectItem value="entregue">Entregue</SelectItem>
                 <SelectItem value="cancelado">Cancelado</SelectItem>
@@ -355,9 +354,6 @@ export default function AdminOrders() {
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="processando">
-                                  <Badge variant="outline">Processando</Badge>
-                                </SelectItem>
                                 <SelectItem value="enviado">
                                   <Badge variant="secondary">Enviado</Badge>
                                 </SelectItem>
