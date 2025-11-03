@@ -163,18 +163,34 @@ export function AddressForm({
                     handleChange("tipoLogradouro", value)
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" data-cy={"tipologradouro"}>
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="RUA">RUA</SelectItem>
-                    <SelectItem value="AVENIDA">AVENIDA</SelectItem>
-                    <SelectItem value="ALAMEDA">ALAMEDA</SelectItem>
-                    <SelectItem value="PRACA">PRAÇA</SelectItem>
-                    <SelectItem value="TRAVESSA">TRAVESSA</SelectItem>
-                    <SelectItem value="VIELA">VIELA</SelectItem>
-                    <SelectItem value="RODOVIA">RODOVIA</SelectItem>
-                    <SelectItem value="CAMINHO">CAMINHO</SelectItem>
+                    <SelectItem value="RUA" data-cy={"rua"}>
+                      RUA
+                    </SelectItem>
+                    <SelectItem value="AVENIDA" data-cy={"avenida"}>
+                      AVENIDA
+                    </SelectItem>
+                    <SelectItem value="ALAMEDA" data-cy={"alameda"}>
+                      ALAMEDA
+                    </SelectItem>
+                    <SelectItem value="PRACA" data-cy={"praca"}>
+                      PRAÇA
+                    </SelectItem>
+                    <SelectItem value="TRAVESSA" data-cy={"travessa"}>
+                      TRAVESSA
+                    </SelectItem>
+                    <SelectItem value="VIELA" data-cy={"viela"}>
+                      VIELA
+                    </SelectItem>
+                    <SelectItem value="RODOVIA" data-cy={"rodovia"}>
+                      RODOVIA
+                    </SelectItem>
+                    <SelectItem value="CAMINHO" data-cy={"caminho"}>
+                      CAMINHO
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -274,16 +290,28 @@ export function AddressForm({
                 value={formData.estado}
                 onValueChange={(value) => handleChange("estado", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger data-cy={"estado"}>
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SP">São Paulo</SelectItem>
-                  <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                  <SelectItem value="MG">Minas Gerais</SelectItem>
-                  <SelectItem value="RS">Rio Grande do Sul</SelectItem>
-                  <SelectItem value="PR">Paraná</SelectItem>
-                  <SelectItem value="SC">Santa Catarina</SelectItem>
+                  <SelectItem value="SP" data-cy={"sp"}>
+                    São Paulo
+                  </SelectItem>
+                  <SelectItem value="RJ" data-cy={"rj"}>
+                    Rio de Janeiro
+                  </SelectItem>
+                  <SelectItem value="MG" data-cy={"mg"}>
+                    Minas Gerais
+                  </SelectItem>
+                  <SelectItem value="RS" data-cy={"rs"}>
+                    Rio Grande do Sul
+                  </SelectItem>
+                  <SelectItem value="PR" data-cy={"pr"}>
+                    Paraná
+                  </SelectItem>
+                  <SelectItem value="SC" data-cy={"sc"}>
+                    Santa Catarina
+                  </SelectItem>
                 </SelectContent>
               </Select>
               {errors.estado && (

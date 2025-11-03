@@ -49,15 +49,16 @@ export function CouponApplication({
     try {
       console.log("🔍 [COMPONENT] Iniciando validação do cupom:", couponCode);
       console.log("💰 [COMPONENT] Total amount:", totalAmount);
-      
+
       const coupon = await cupomService.validate(couponCode);
-      
+
       console.log("✅ [COMPONENT] Cupom recebido do serviço:", coupon);
       console.log("📋 [COMPONENT] Propriedades do cupom:", {
         ativo: coupon.ativo,
         valorMinimo: coupon.valorMinimo,
         tipo: typeof coupon.ativo,
-        temValorMinimo: coupon.valorMinimo !== undefined && coupon.valorMinimo !== null
+        temValorMinimo:
+          coupon.valorMinimo !== undefined && coupon.valorMinimo !== null,
       });
 
       // Validação: cupom ativo
@@ -70,7 +71,7 @@ export function CouponApplication({
         });
         return;
       }
-      
+
       console.log("✅ [COMPONENT] Cupom está ativo!");
 
       // Validação: valor mínimo
@@ -78,28 +79,32 @@ export function CouponApplication({
         console.log("💰 [COMPONENT] Verificando valor mínimo:", {
           valorMinimo: coupon.valorMinimo,
           totalAmount: totalAmount,
-          valido: totalAmount >= coupon.valorMinimo
+          valido: totalAmount >= coupon.valorMinimo,
         });
-        
+
         if (totalAmount < coupon.valorMinimo) {
           console.log("❌ [COMPONENT] Valor mínimo não atingido");
           toast({
             title: "Valor mínimo não atingido",
-            description: `Este cupom requer um valor mínimo de R$ ${coupon.valorMinimo.toFixed(2)}. Seu carrinho está em R$ ${totalAmount.toFixed(2)}`,
+            description: `Este cupom requer um valor mínimo de R$ ${coupon.valorMinimo.toFixed(
+              2
+            )}. Seu carrinho está em R$ ${totalAmount.toFixed(2)}`,
             variant: "destructive",
           });
           return;
         }
       }
-      
+
       console.log("✅ [COMPONENT] Valor mínimo OK (ou não aplicável)!");
 
       // ✅ Cupom válido! Adicionar à lista
-      console.log("✅ [COMPONENT] Cupom validado com sucesso! Adicionando à lista...");
+      console.log(
+        "✅ [COMPONENT] Cupom validado com sucesso! Adicionando à lista..."
+      );
       const newCoupons = [...appliedCoupons, coupon];
       setAppliedCoupons(newCoupons);
       onCouponsChange(newCoupons);
-      
+
       console.log("✅ [COMPONENT] Cupons atualizados:", newCoupons);
 
       toast({
@@ -119,12 +124,15 @@ export function CouponApplication({
         status: error.response?.status,
         data: error.response?.data,
         message: error.message,
-        name: error.name
+        name: error.name,
       });
-      
+
       toast({
         title: "Cupom inválido",
-        description: error.response?.data?.message || error.message || "Não foi possível validar o cupom.",
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          "Não foi possível validar o cupom.",
         variant: "destructive",
       });
     } finally {
@@ -168,7 +176,9 @@ export function CouponApplication({
         <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
           <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
           <div className="text-blue-700 dark:text-blue-300">
-            <p className="font-medium">Valor atual do carrinho: R$ {totalAmount.toFixed(2)}</p>
+            <p className="font-medium">
+              Valor atual do carrinho: R$ {totalAmount.toFixed(2)}
+            </p>
             <p className="text-xs mt-1 text-blue-600 dark:text-blue-400">
               Alguns cupons podem exigir um valor mínimo de compra
             </p>
@@ -188,10 +198,12 @@ export function CouponApplication({
             }}
             disabled={isValidating}
             className="flex-1"
+            data-cy={"inputCupom"}
           />
           <Button
             onClick={handleValidateCoupon}
             disabled={isValidating || !couponCode.trim()}
+            data-cy={"aplicar"}
           >
             {isValidating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -216,7 +228,9 @@ export function CouponApplication({
                     <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{coupon.codigo}</span>
+                        <span className="font-medium text-sm">
+                          {coupon.codigo}
+                        </span>
                         <Badge variant="secondary" className="text-xs">
                           {coupon.percentual
                             ? `${coupon.valor}%`

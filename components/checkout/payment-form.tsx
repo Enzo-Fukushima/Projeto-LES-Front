@@ -176,13 +176,19 @@ export function PaymentForm({
                   value={formData.bandeira}
                   onValueChange={(value) => handleChange("bandeira", value)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" data-cy={"bandeira"}>
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="AMEX">AMEX</SelectItem>
-                    <SelectItem value="VISA">VISA</SelectItem>
-                    <SelectItem value="MASTERCARD">MASTERCARD</SelectItem>
+                    <SelectItem value="AMEX" data-cy={"amex"}>
+                      AMEX
+                    </SelectItem>
+                    <SelectItem value="VISA" data-cy={"visa"}>
+                      VISA
+                    </SelectItem>
+                    <SelectItem value="MASTERCARD" data-cy={"master"}>
+                      MASTERCARD
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

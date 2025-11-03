@@ -25,8 +25,8 @@ import type { CouponDTO } from "@/lib/types";
 import { ArrowLeft, Truck } from "lucide-react";
 
 // ✅ Configuração do frete
-const FIXED_SHIPPING_COST = 10.00; // R$ 10,00
-const FREE_SHIPPING_THRESHOLD = 100.00; // Frete grátis acima de R$ 100,00
+const FIXED_SHIPPING_COST = 10.0; // R$ 10,00
+const FREE_SHIPPING_THRESHOLD = 100.0; // Frete grátis acima de R$ 100,00
 
 export default function CheckoutPage() {
   const { items, getTotal, reloadCart } = useCart();
@@ -34,7 +34,9 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [step, setStep] = useState<"select" | "address" | "payment" | "review">("select");
+  const [step, setStep] = useState<"select" | "address" | "payment" | "review">(
+    "select"
+  );
   const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
   const [paymentCards, setPaymentCards] = useState<any[]>([]);
   const [appliedCoupons, setAppliedCoupons] = useState<CouponDTO[]>([]);
@@ -71,7 +73,10 @@ export default function CheckoutPage() {
     setAppliedCoupons(coupons);
   };
 
-  const calculateCouponDiscount = (coupon: CouponDTO, subtotal: number): number => {
+  const calculateCouponDiscount = (
+    coupon: CouponDTO,
+    subtotal: number
+  ): number => {
     if (coupon.percentual) {
       return (subtotal * coupon.valor) / 100;
     }
@@ -80,11 +85,15 @@ export default function CheckoutPage() {
 
   // ✅ Calcular frete baseado no subtotal
   const subtotal = getTotal();
-  const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FIXED_SHIPPING_COST;
+  const shippingCost =
+    subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FIXED_SHIPPING_COST;
 
   const handlePlaceOrder = async () => {
     if (!user || !deliveryAddress || paymentCards.length === 0) {
-      toast({ title: "Erro", description: "Dados incompletos para finalizar o pedido." });
+      toast({
+        title: "Erro",
+        description: "Dados incompletos para finalizar o pedido.",
+      });
       return;
     }
 
@@ -92,12 +101,12 @@ export default function CheckoutPage() {
 
     try {
       const carrinho = await carrinhoService.getByCliente(user.id);
-      
+
       const totalCouponDiscount = appliedCoupons.reduce(
         (sum, coupon) => sum + calculateCouponDiscount(coupon, subtotal),
         0
       );
-      
+
       const total = subtotal + shippingCost - totalCouponDiscount;
 
       const payload = {
@@ -122,24 +131,33 @@ export default function CheckoutPage() {
       await pedidosService.checkout(payload);
       await reloadCart();
 
-      toast({ title: "Sucesso", description: "Pedido finalizado com sucesso!" });
+      toast({
+        title: "Sucesso",
+        description: "Pedido finalizado com sucesso!",
+      });
       router.push("/");
     } catch (error) {
       console.error("Erro ao finalizar pedido:", error);
-      toast({ title: "Erro", description: "Não foi possível finalizar o pedido." });
+      toast({
+        title: "Erro",
+        description: "Não foi possível finalizar o pedido.",
+      });
     } finally {
       setIsProcessing(false);
     }
   };
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(price);
 
   const totalCouponDiscount = appliedCoupons.reduce(
     (sum, coupon) => sum + calculateCouponDiscount(coupon, subtotal),
     0
   );
-  
+
   const total = subtotal + shippingCost - totalCouponDiscount;
 
   if (!user || !user.id || items.length === 0) {
@@ -205,12 +223,16 @@ export default function CheckoutPage() {
                         <p className="text-sm text-blue-700 dark:text-blue-300">
                           {subtotal >= FREE_SHIPPING_THRESHOLD ? (
                             <>
-                              🎉 <strong>Frete Grátis!</strong> Seu pedido atingiu o valor mínimo de {formatPrice(FREE_SHIPPING_THRESHOLD)}
+                              🎉 <strong>Frete Grátis!</strong> Seu pedido
+                              atingiu o valor mínimo de{" "}
+                              {formatPrice(FREE_SHIPPING_THRESHOLD)}
                             </>
                           ) : (
                             <>
-                              Frete fixo de {formatPrice(FIXED_SHIPPING_COST)}. 
-                              Faltam apenas {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} para frete grátis!
+                              Frete fixo de {formatPrice(FIXED_SHIPPING_COST)}.
+                              Faltam apenas{" "}
+                              {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)}{" "}
+                              para frete grátis!
                             </>
                           )}
                         </p>
@@ -231,12 +253,16 @@ export default function CheckoutPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h3 className="font-semibold mb-2">Endereço de Entrega</h3>
+                      <h3 className="font-semibold mb-2">
+                        Endereço de Entrega
+                      </h3>
                       <p className="text-sm text-muted-foreground">
                         {deliveryAddress?.logradouro}, {deliveryAddress?.numero}
-                        {deliveryAddress?.complemento && ` - ${deliveryAddress.complemento}`}
+                        {deliveryAddress?.complemento &&
+                          ` - ${deliveryAddress.complemento}`}
                         <br />
-                        {deliveryAddress?.bairro} - {deliveryAddress?.cidade}/{deliveryAddress?.estado}
+                        {deliveryAddress?.bairro} - {deliveryAddress?.cidade}/
+                        {deliveryAddress?.estado}
                         <br />
                         CEP: {deliveryAddress?.cep}
                       </p>
@@ -245,10 +271,15 @@ export default function CheckoutPage() {
                     <div>
                       <h3 className="font-semibold mb-2">Forma de Pagamento</h3>
                       {paymentCards.map((payment, index) => (
-                        <div key={index} className="text-sm text-muted-foreground mb-2">
-                          {payment.card.bandeira} •••• {payment.card.numeroCartao?.slice(-4)}
+                        <div
+                          key={index}
+                          className="text-sm text-muted-foreground mb-2"
+                        >
+                          {payment.card.bandeira} ••••{" "}
+                          {payment.card.numeroCartao?.slice(-4)}
                           <br />
-                          {payment.card.nomeImpresso} - {formatPrice(payment.amount)}
+                          {payment.card.nomeImpresso} -{" "}
+                          {formatPrice(payment.amount)}
                         </div>
                       ))}
                     </div>
@@ -257,10 +288,19 @@ export default function CheckoutPage() {
                       <>
                         <Separator />
                         <div>
-                          <h3 className="font-semibold mb-2">Cupons Aplicados</h3>
+                          <h3 className="font-semibold mb-2">
+                            Cupons Aplicados
+                          </h3>
                           {appliedCoupons.map((coupon) => (
-                            <div key={coupon.id} className="text-sm text-muted-foreground mb-2">
-                              {coupon.codigo} - {formatPrice(calculateCouponDiscount(coupon, subtotal))} de desconto
+                            <div
+                              key={coupon.id}
+                              className="text-sm text-muted-foreground mb-2"
+                            >
+                              {coupon.codigo} -{" "}
+                              {formatPrice(
+                                calculateCouponDiscount(coupon, subtotal)
+                              )}{" "}
+                              de desconto
                             </div>
                           ))}
                         </div>
@@ -268,7 +308,13 @@ export default function CheckoutPage() {
                     )}
                   </CardContent>
                 </Card>
-                <Button onClick={handlePlaceOrder} disabled={isProcessing} size="lg" className="w-full">
+                <Button
+                  onClick={handlePlaceOrder}
+                  disabled={isProcessing}
+                  size="lg"
+                  className="w-full"
+                  data-cy={"finalizar"}
+                >
                   {isProcessing ? "Processando..." : "Finalizar Compra"}
                 </Button>
               </div>
@@ -283,10 +329,14 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  {items.map(item => (
+                  {items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
-                      <span>{item.titulo} x{item.quantidade}</span>
-                      <span>{formatPrice(item.precoUnitario * item.quantidade)}</span>
+                      <span>
+                        {item.titulo} x{item.quantidade}
+                      </span>
+                      <span>
+                        {formatPrice(item.precoUnitario * item.quantidade)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -296,7 +346,7 @@ export default function CheckoutPage() {
                     <span>Subtotal:</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
-                  
+
                   {/* ✅ Frete sempre visível */}
                   <div className="flex justify-between">
                     <span>Frete:</span>
@@ -314,16 +364,27 @@ export default function CheckoutPage() {
                     <div className="pt-2">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">
                         <span>Progresso para frete grátis:</span>
-                        <span>{((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%</span>
+                        <span>
+                          {((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(
+                            0
+                          )}
+                          %
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div
                           className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100)}%` }}
+                          style={{
+                            width: `${Math.min(
+                              (subtotal / FREE_SHIPPING_THRESHOLD) * 100,
+                              100
+                            )}%`,
+                          }}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Faltam {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} para frete grátis
+                        Faltam {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)}{" "}
+                        para frete grátis
                       </p>
                     </div>
                   )}

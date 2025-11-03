@@ -261,6 +261,7 @@ export function AddressPaymentSelection({
             variant="outline"
             onClick={onAddNewAddress}
             className="w-full bg-transparent"
+            data-cy={"adicionarendereco"}
           >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Novo Endereço
@@ -445,6 +446,7 @@ export function AddressPaymentSelection({
             variant="outline"
             onClick={onAddNewCard}
             className="w-full bg-transparent"
+            data-cy={"adicionarcartao"}
           >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Novo Cartão
