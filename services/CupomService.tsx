@@ -5,6 +5,7 @@ export interface CupomDTO {
   id: number;
   codigo: string;
   tipoCupom: number; // 0=DESCONTO, 1=TROCA
+  valor: number;
   percentual: boolean;
   ativo: boolean;
   singleUse: boolean;
@@ -12,6 +13,7 @@ export interface CupomDTO {
   dataValidade?: string;
   clienteId?: number;
   trocaId?: number;
+  nomeCliente?: string;
 }
 
 export interface CupomUseDTO {
@@ -32,9 +34,10 @@ class CupomService {
 
   /**
    * Valida um cupom pelo código
+   * ✅ Usa o endpoint correto: /cupons/validar/{codigo}
    */
   async validate(codigo: string): Promise<CupomUseDTO> {
-    const response = await api.get<CupomUseDTO>(`${this.baseURL}/${codigo.toUpperCase()}`);
+    const response = await api.get<CupomUseDTO>(`${this.baseURL}/validar/${codigo.toUpperCase()}`);
     return response.data;
   }
 
