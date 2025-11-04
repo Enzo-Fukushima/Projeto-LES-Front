@@ -749,6 +749,7 @@ export default function ExchangesPage() {
                                       }
                                       disabled={isProcessing}
                                       className="w-full"
+                                      data-cy={`confirmarRecebimento-${exchange.id}`}
                                     >
                                       {isProcessing ? (
                                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -786,6 +787,7 @@ export default function ExchangesPage() {
                               }
                               disabled={isProcessing}
                               title="Autorizar troca"
+                              data-cy={`troca-${exchange.id}`}
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -808,6 +810,7 @@ export default function ExchangesPage() {
                             }}
                             disabled={isProcessing}
                             title="Confirmar recebimento"
+                            data-cy={`confirmaTroca-${exchange.id}`}
                           >
                             <Package className="h-4 w-4" />
                           </Button>

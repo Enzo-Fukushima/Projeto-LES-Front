@@ -1,14 +1,21 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card, CardContent, CardHeader, CardTitle
-} from "@/components/ui/card";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -110,20 +117,26 @@ export default function AdminOrders() {
         trocasData.forEach((troca) => {
           // Armazena apenas a troca mais recente por pedido
           const trocaExistente = trocasPorPedido.get(troca.pedidoId);
-          if (!trocaExistente || new Date(troca.dataSolicitacao) > new Date(trocaExistente.dataSolicitacao)) {
+          if (
+            !trocaExistente ||
+            new Date(troca.dataSolicitacao) >
+              new Date(trocaExistente.dataSolicitacao)
+          ) {
             trocasPorPedido.set(troca.pedidoId, troca);
           }
         });
 
         // Enriquece os pedidos com informações de troca
-        const pedidosEnriquecidos: PedidoComTroca[] = pedidosData.map((pedido) => {
-          const troca = trocasPorPedido.get(pedido.id);
-          return {
-            ...pedido,
-            troca,
-            statusExibicao: troca ? troca.status : pedido.status,
-          };
-        });
+        const pedidosEnriquecidos: PedidoComTroca[] = pedidosData.map(
+          (pedido) => {
+            const troca = trocasPorPedido.get(pedido.id);
+            return {
+              ...pedido,
+              troca,
+              statusExibicao: troca ? troca.status : pedido.status,
+            };
+          }
+        );
 
         setOrders(pedidosEnriquecidos);
         console.log("Pedidos carregados:", pedidosEnriquecidos);
@@ -158,12 +171,13 @@ export default function AdminOrders() {
   //  Atualiza status no backend e localmente
   const handleStatusChange = async (orderId: number, newStatus: string) => {
     const order = orders.find((o) => o.id === orderId);
-    
+
     // Se o pedido tem troca ativa, não permite alterar o status do pedido
     if (order?.troca && !["concluida", "negada"].includes(order.troca.status)) {
       toast({
         title: "Pedido em processo de troca",
-        description: "Não é possível alterar o status de pedidos com troca ativa. Gerencie pela seção de trocas.",
+        description:
+          "Não é possível alterar o status de pedidos com troca ativa. Gerencie pela seção de trocas.",
         variant: "destructive",
       });
       return;
@@ -173,14 +187,15 @@ export default function AdminOrders() {
     if (order?.status === "entregue") {
       toast({
         title: "Pedido já entregue",
-        description: "Não é possível alterar o status de pedidos que já foram entregues.",
+        description:
+          "Não é possível alterar o status de pedidos que já foram entregues.",
         variant: "destructive",
       });
       return;
     }
 
-    // Não permite marcar como entregue sem antes estar enviado
-    if (newStatus === "entregue" && order?.status !== "enviado") {
+    // Não permite marcar como entregue sem antes estar em transporte
+    if (newStatus === "entregue" && order?.status !== "em_transporte") {
       toast({
         title: "Pedido não foi enviado",
         description: "Um pedido só pode ser marcado como entregue depois de ser enviado.",
@@ -200,15 +215,15 @@ export default function AdminOrders() {
                 status: newStatus as PedidoDTO["status"],
                 statusExibicao: newStatus,
                 codigoRastreamento:
-                  newStatus === "enviado" && !o.codigoRastreamento
+                  newStatus === "em_transporte" && !o.codigoRastreamento
                     ? `BR${Math.random().toString().slice(2, 11)}`
                     : o.codigoRastreamento,
                 dataEnvio:
-                  newStatus === "enviado"
+                  newStatus === "em_transporte"
                     ? new Date().toISOString()
                     : o.dataEnvio,
                 dataEntrega:
-                  newStatus === "entregue"
+                  newStatus === "em_transporte"
                     ? new Date().toISOString()
                     : o.dataEntrega,
               }
@@ -218,7 +233,9 @@ export default function AdminOrders() {
 
       toast({
         title: "Status atualizado",
-        description: `Pedido #${orderId} marcado como ${getStatusLabel(newStatus)}.`,
+        description: `Pedido #${orderId} marcado como ${getStatusLabel(
+          newStatus
+        )}.`,
       });
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
@@ -297,8 +314,10 @@ export default function AdminOrders() {
                 {filteredOrders.length > 0 ? (
                   filteredOrders.map((order) => {
                     // Verifica se o pedido tem troca ativa (não concluída/negada)
-                    const temTrocaAtiva = order.troca && !["concluida", "negada"].includes(order.troca.status);
-                    
+                    const temTrocaAtiva =
+                      order.troca &&
+                      !["concluida", "negada"].includes(order.troca.status);
+
                     return (
                       <TableRow key={order.id}>
                         <TableCell>
@@ -335,7 +354,9 @@ export default function AdminOrders() {
                         <TableCell>
                           {temTrocaAtiva || order.status === "entregue" ? (
                             // Badge imutável para pedidos com troca ativa ou já entregues
-                            <Badge variant={getStatusColor(order.statusExibicao!)}>
+                            <Badge
+                              variant={getStatusColor(order.statusExibicao!)}
+                            >
                               {getStatusLabel(order.statusExibicao!)}
                             </Badge>
                           ) : (
@@ -346,21 +367,24 @@ export default function AdminOrders() {
                                 handleStatusChange(order.id, newStatus)
                               }
                             >
-                              <SelectTrigger className="w-32">
-                                <SelectValue>
+                              <SelectTrigger className="w-32" data-cy={`status-${order.id}`}>
+                                <SelectValue >
                                   <Badge variant={getStatusColor(order.status)}>
                                     {getStatusLabel(order.status)}
                                   </Badge>
                                 </SelectValue>
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="enviado">
-                                  <Badge variant="secondary">Enviado</Badge>
+                              <SelectContent >
+                                <SelectItem value="preparando" data-cy={"preparando"}>
+                                  <Badge variant="secondary">Preparando</Badge>
                                 </SelectItem>
-                                <SelectItem value="entregue">
+                                <SelectItem value="em_transporte" data-cy={"em_transporte"}>
+                                  <Badge variant="secondary">EM_TRANSPORTE</Badge>
+                                </SelectItem>
+                                <SelectItem value="entregue" data-cy={"entregue"}>
                                   <Badge variant="default">Entregue</Badge>
                                 </SelectItem>
-                                <SelectItem value="cancelado">
+                                <SelectItem value="cancelado"data-cy={"cancelado"}>
                                   <Badge variant="destructive">Cancelado</Badge>
                                 </SelectItem>
                               </SelectContent>

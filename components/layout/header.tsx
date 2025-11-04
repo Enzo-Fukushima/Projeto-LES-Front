@@ -94,7 +94,7 @@ export function Header() {
 
             {/* Admin */}
 
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild data-cy={"admin"}> 
               <Link href="/admin">
                 <Settings className="h-4 w-4 mr-2" />
                 Admin
@@ -105,17 +105,17 @@ export function Header() {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" data-cy={"usuario"}>
                     <User className="h-5 w-5 mr-2" />
                     {user?.nome?.split(" ")[0] ?? "Usuário"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link href="/profile">Meu Perfil</Link>
+                    <Link href="/profile" data-cy={"perfil"}>Meu Perfil</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/orders">Meus Pedidos</Link>
+                    <Link href="/orders" data-cy={"pedidos"}>Meus Pedidos</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>

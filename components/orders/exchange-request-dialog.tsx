@@ -289,8 +289,10 @@ export function ExchangeRequestDialog({
                       <div className="flex items-start gap-3">
                         <Checkbox
                           checked={isSelected}
+                          data-cy={`item-${pedidoItem.id}`}
                           onCheckedChange={() =>
                             handleItemToggle(pedidoItem.id)
+                            
                           }
                         />
                         <div className="flex items-center gap-3 flex-1">

@@ -23,11 +23,11 @@ const sidebarItems = [
     href: "/admin",
     icon: LayoutDashboard,
   },
-  {
-    title: "Produtos",
-    href: "/admin/products",
-    icon: Package,
-  },
+  // {
+  //   title: "Produtos",
+  //   href: "/admin/products",
+  //   icon: Package,
+  // },
   {
     title: "Pedidos",
     href: "/admin/orders",

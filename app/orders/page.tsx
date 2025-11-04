@@ -229,6 +229,7 @@ export default function OrdersPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedOrderForExchange(order.id)}
+                        data-cy={`troca-${order.id}`}
                       >
                         <RefreshCw className="h-4 w-4 mr-2" /> Solicitar Troca
                       </Button>
