@@ -67,7 +67,7 @@ export function ProductCard({
         <Link href={`/books/${book.id}`}>
           <div className="relative aspect-[3/4] overflow-hidden">
             <Image
-              src={book.imagem_url || "/placeholder.svg"}
+              src={book.imagemUrl || "/placeholder.svg"}
               alt={book.titulo}
               fill
               className="object-cover transition-transform group-hover:scale-105"
@@ -88,7 +88,7 @@ export function ProductCard({
           </Link>
           <p className="text-sm text-muted-foreground">{book.autor}</p>
           <p className="text-sm text-muted-foreground">
-            {book.editora} • {book.publicacao}
+            {book.editoraId} • {book.publicacao}
           </p>
           <div className="flex items-center justify-between">
             <span className="font-bold text-lg text-primary">

@@ -106,7 +106,7 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
 
-  // 🔄 Busca inicial de pedidos e trocas
+  // Busca inicial de pedidos e trocas
   useEffect(() => {
     (async () => {
       try {
@@ -250,7 +250,7 @@ export default function AdminOrders() {
     }
   };
 
-  // 🧱 Renderização principal
+  //  Renderização principal
   return (
     <div className="space-y-6">
       <header>

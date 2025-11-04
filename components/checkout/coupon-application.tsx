@@ -47,13 +47,13 @@ export function CouponApplication({
 
     setIsValidating(true);
     try {
-      console.log("🔍 [COMPONENT] Iniciando validação do cupom:", couponCode);
-      console.log("💰 [COMPONENT] Total amount:", totalAmount);
+      console.log(" [COMPONENT] Iniciando validação do cupom:", couponCode);
+      console.log(" [COMPONENT] Total amount:", totalAmount);
 
       const coupon = await cupomService.validate(couponCode);
 
-      console.log("✅ [COMPONENT] Cupom recebido do serviço:", coupon);
-      console.log("📋 [COMPONENT] Propriedades do cupom:", {
+      console.log(" [COMPONENT] Cupom recebido do serviço:", coupon);
+      console.log(" [COMPONENT] Propriedades do cupom:", {
         ativo: coupon.ativo,
         valorMinimo: coupon.valorMinimo,
         tipo: typeof coupon.ativo,
@@ -63,7 +63,7 @@ export function CouponApplication({
 
       // Validação: cupom ativo
       if (!coupon.ativo) {
-        console.log("❌ [COMPONENT] Cupom inativo");
+        console.log(" [COMPONENT] Cupom inativo");
         toast({
           title: "Cupom inválido",
           description: "Este cupom não está mais ativo.",
@@ -72,18 +72,18 @@ export function CouponApplication({
         return;
       }
 
-      console.log("✅ [COMPONENT] Cupom está ativo!");
+      console.log(" [COMPONENT] Cupom está ativo!");
 
       // Validação: valor mínimo
       if (coupon.valorMinimo && coupon.valorMinimo > 0) {
-        console.log("💰 [COMPONENT] Verificando valor mínimo:", {
+        console.log(" [COMPONENT] Verificando valor mínimo:", {
           valorMinimo: coupon.valorMinimo,
           totalAmount: totalAmount,
           valido: totalAmount >= coupon.valorMinimo,
         });
 
         if (totalAmount < coupon.valorMinimo) {
-          console.log("❌ [COMPONENT] Valor mínimo não atingido");
+          console.log(" [COMPONENT] Valor mínimo não atingido");
           toast({
             title: "Valor mínimo não atingido",
             description: `Este cupom requer um valor mínimo de R$ ${coupon.valorMinimo.toFixed(
@@ -95,17 +95,17 @@ export function CouponApplication({
         }
       }
 
-      console.log("✅ [COMPONENT] Valor mínimo OK (ou não aplicável)!");
+      console.log(" [COMPONENT] Valor mínimo OK (ou não aplicável)!");
 
-      // ✅ Cupom válido! Adicionar à lista
+      //  Cupom válido! Adicionar à lista
       console.log(
-        "✅ [COMPONENT] Cupom validado com sucesso! Adicionando à lista..."
+        " [COMPONENT] Cupom validado com sucesso! Adicionando à lista..."
       );
       const newCoupons = [...appliedCoupons, coupon];
       setAppliedCoupons(newCoupons);
       onCouponsChange(newCoupons);
 
-      console.log("✅ [COMPONENT] Cupons atualizados:", newCoupons);
+      console.log(" [COMPONENT] Cupons atualizados:", newCoupons);
 
       toast({
         title: "Cupom aplicado!",
@@ -118,9 +118,9 @@ export function CouponApplication({
 
       setCouponCode("");
     } catch (error: any) {
-      console.error("❌ [COMPONENT] Erro ao validar cupom:", error);
-      console.error("❌ [COMPONENT] Stack trace:", error.stack);
-      console.error("❌ [COMPONENT] Detalhes:", {
+      console.error(" [COMPONENT] Erro ao validar cupom:", error);
+      console.error(" [COMPONENT] Stack trace:", error.stack);
+      console.error(" [COMPONENT] Detalhes:", {
         status: error.response?.status,
         data: error.response?.data,
         message: error.message,

@@ -189,9 +189,9 @@ export interface CreateClienteEnderecoDTO {
 // ==========================
 export interface CartaoCredito {
   id: number;
-  numeroCartao: string;
+  numero: string;
   numeroMascarado?: string;
-  nomeImpresso: string;
+  nomeTitular: string;
   codigoSeguranca: string;
   bandeira: BandeiraCartao;
   clienteId: number;

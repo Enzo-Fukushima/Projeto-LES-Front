@@ -40,13 +40,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (userData: Partial<User>): Promise<boolean> => {
     setIsLoading(true);
 
-    if (!userData.senha_hash) {
+    if (!userData.senha) {
       console.error("Senha é obrigatória para registro");
       setIsLoading(false);
       return false;
     }
 
-    const validation = validatePassword(userData.senha_hash);
+    const validation = validatePassword(userData.senha);
     if (!validation.isValid) {
       setIsLoading(false);
       return false;
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newUserPayload = {
         ...userData,
         codigo_cliente: generateCustomerCode(),
-        senha: userData.senha_hash, // Criar o campo obrigatório para API
+        senha: userData.senha, // Criar o campo obrigatório para API
       };
 
       const response = await clientesService.create(newUserPayload);
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         numeroTelefone: updatedUserData.numeroTelefone ?? user.numeroTelefone,
         ativo: updatedUserData.ativo ?? user.ativo ?? false,
         ranking: updatedUserData.ranking ?? user.ranking,
-        senha: updatedUserData.senha_hash, // se quiser atualizar senha
+        senha: updatedUserData.senha, // se quiser atualizar senha
         
       };
 

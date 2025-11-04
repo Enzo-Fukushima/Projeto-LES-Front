@@ -24,7 +24,7 @@ import type { CouponDTO } from "@/lib/types";
 
 import { ArrowLeft, Truck } from "lucide-react";
 
-// ✅ Configuração do frete
+//  Configuração do frete
 const FIXED_SHIPPING_COST = 10.0; // R$ 10,00
 const FREE_SHIPPING_THRESHOLD = 100.0; // Frete grátis acima de R$ 100,00
 
@@ -55,7 +55,7 @@ export default function CheckoutPage() {
   const handleSelectionContinue = (address: any, payments: any[]) => {
     setDeliveryAddress(address);
     setPaymentCards(payments);
-    setStep("review"); // ✅ Vai direto para review, sem step de shipping
+    setStep("review"); //  Vai direto para review, sem step de shipping
   };
 
   const handleAddressSave = (addressData: any) => {
@@ -83,7 +83,7 @@ export default function CheckoutPage() {
     return coupon.valor;
   };
 
-  // ✅ Calcular frete baseado no subtotal
+  //  Calcular frete baseado no subtotal
   const subtotal = getTotal();
   const shippingCost =
     subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FIXED_SHIPPING_COST;
@@ -112,7 +112,7 @@ export default function CheckoutPage() {
       const payload = {
         clienteId: user.id,
         enderecoEntregaId: deliveryAddress.id,
-        freteId: null, // ✅ Não tem mais ID de frete
+        freteId: null, //  Não tem mais ID de frete
         carrinhoId: carrinho.id,
         itens: carrinho.itens.map((i: any) => ({
           livroId: i.livroId ?? i.livro?.id,
@@ -211,7 +211,7 @@ export default function CheckoutPage() {
 
             {step === "review" && (
               <div className="space-y-4">
-                {/* ✅ Card de Informação do Frete */}
+                {/* Card de Informação do Frete */}
                 <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-3">
@@ -241,7 +241,7 @@ export default function CheckoutPage() {
                   </CardContent>
                 </Card>
 
-                {/* ✅ Componente de Cupons */}
+                {/* Componente de Cupons */}
                 <CouponApplication
                   totalAmount={subtotal}
                   onCouponsChange={handleCouponsChange}
@@ -347,7 +347,7 @@ export default function CheckoutPage() {
                     <span>{formatPrice(subtotal)}</span>
                   </div>
 
-                  {/* ✅ Frete sempre visível */}
+                  {/* Frete sempre visível */}
                   <div className="flex justify-between">
                     <span>Frete:</span>
                     {shippingCost === 0 ? (
@@ -359,7 +359,7 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  {/* ✅ Indicador de progresso para frete grátis */}
+                  {/* Indicador de progresso para frete grátis */}
                   {subtotal < FREE_SHIPPING_THRESHOLD && (
                     <div className="pt-2">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">

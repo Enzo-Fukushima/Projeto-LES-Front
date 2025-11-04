@@ -31,9 +31,8 @@ const tipoCupomLabels: Record<string, string> = {
 };
 
 const tipoCupomColors: Record<string, string> = {
-  "PROMOCIONAL": "bg-blue-100 text-blue-800",
+  "DESCONTO": "bg-blue-100 text-blue-800",
   "TROCA": "bg-purple-100 text-purple-800",
-  "FIDELIDADE": "bg-green-100 text-green-800",
 };
 
 export default function AdminCouponsPage() {
