@@ -198,6 +198,7 @@ export interface CartaoCredito {
 }
 
 export interface CartaoCreditoDTO {
+  nomeImpresso: string;
   numeroCartao: any;
   id?: number;
   numero: string;
