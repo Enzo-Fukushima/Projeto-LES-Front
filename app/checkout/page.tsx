@@ -335,7 +335,7 @@ export default function CheckoutPage() {
                         {item.titulo} x{item.quantidade}
                       </span>
                       <span>
-                        {formatPrice(item.precoUnitario * item.quantidade)}
+                        {formatPrice((item.precoUnitario ?? 0) * item.quantidade)}
                       </span>
                     </div>
                   ))}

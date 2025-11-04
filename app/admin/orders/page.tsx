@@ -29,6 +29,9 @@ import type { TrocaDTO } from "@/services/TrocaService";
 interface PedidoComTroca extends PedidoDTO {
   troca?: TrocaDTO;
   statusExibicao?: string;
+  clienteNome?: string;
+  dataEnvio?: string;
+  dataCriacao?: string;
 }
 
 //  Funções utilitárias
@@ -205,7 +208,7 @@ export default function AdminOrders() {
     }
 
     try {
-      await pedidosService.updateStatus(orderId.toString(), newStatus);
+      await pedidosService.updateStatus(orderId, newStatus);
 
       setOrders((prev) =>
         prev.map((o) =>
@@ -393,10 +396,10 @@ export default function AdminOrders() {
                         </TableCell>
 
                         <TableCell>
-                          {formatPrice(order.valorTotal)}
+                          {formatPrice(order.valorTotal ?? 0)}
                           {order.troca && (
                             <p className="text-xs text-muted-foreground">
-                              Troca: {formatPrice(order.troca.valorTotalTroca)}
+                              Troca: {formatPrice(order.troca.valorTotalTroca ?? 0)}
                             </p>
                           )}
                         </TableCell>

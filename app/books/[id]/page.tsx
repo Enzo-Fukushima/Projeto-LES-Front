@@ -13,7 +13,7 @@ import { AIChatbot } from "@/components/recommendations/ai-chatbot";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, ArrowLeft, Package, Truck } from "lucide-react";
-import { livrosService } from "@/services/livrosService";
+import { livrosService } from "@/services/LivrosService";
 
 interface BookPageProps {
   params: {

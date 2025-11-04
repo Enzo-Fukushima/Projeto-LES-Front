@@ -90,8 +90,8 @@ export interface ClienteDTO {
 }
 
 export interface ClienteDetalhadoDTO extends ClienteDTO {
-  enderecos: EnderecoDTO[];
-  cartoes: CartaoCreditoDTO[];
+  enderecos: Endereco[];
+  cartoes: CartaoCredito[];
 }
 
 export interface CreateClienteDTO {
@@ -198,9 +198,10 @@ export interface CartaoCredito {
 }
 
 export interface CartaoCreditoDTO {
+  numeroCartao: any;
   id?: number;
-  numeroCartao: string;
-  nomeImpresso: string;
+  numero: string;
+  nomeTitular: string;
   validade: string;
   codigoSeguranca: string;
   bandeira: string;
@@ -340,13 +341,24 @@ export interface OrderItemDTO {
   quantidade: number;
   precoUnitario: number;
   subtotal: number;
+  preco_total: number;
 }
+
+  
 
 export interface PedidoDTO {
   id: number;
   status: string;
   clienteId: number;
-  itens: OrderItemDTO[];
+  itens: {
+    precoUnitario: number;
+    id: number;
+    livroId: number;
+    titulo?: string;
+    subtotal?: number;
+    preco_total?: number;
+    quantidade: number;
+  }[];
   valorTotal?: number;
   valorFrete?: number;
   codigoRastreamento?: string;
@@ -401,4 +413,19 @@ export interface PaginatedResponse<T> {
   totalPages: number;
   size: number;
   number: number;
+}
+
+
+export interface Livro {
+  id: number;
+  titulo: string;
+  autor: string;
+  descricao: string;
+  editoraId: number;
+  preco: number;
+  publicacao: string;
+  estoque: number;
+  peso: number;
+  categoriaIds: number[];
+  imagemUrl: string;
 }

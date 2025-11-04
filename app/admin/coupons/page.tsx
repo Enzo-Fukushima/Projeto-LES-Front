@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cupomService, CupomDTO } from "@/services/CupomService";
 
 const tipoCupomLabels: Record<string, string> = {
-  "PROMOCIONAL": "PROMOCIONAL",
+  "DESCONTO": "DESCONTO",
   "TROCA": "TROCA",
   "FIDELIDADE": "FIDELIDADE",
 };
@@ -143,7 +143,7 @@ export default function AdminCouponsPage() {
     return { label: "Ativo", color: "bg-green-100 text-green-800" };
   };
 
-  const getCouponsByType = (tipo: string) =>
+  const getCouponsByType = (tipo: number) =>
     coupons.filter((c) => c.tipoCupom === tipo).length;
 
   const getActiveCoupons = () =>
@@ -189,7 +189,7 @@ export default function AdminCouponsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{coupons.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {getCouponsByType("PROMOCIONAL")} promocionais • {getCouponsByType("TROCA")} trocas
+              {getCouponsByType(0)} descontos • {getCouponsByType(1)} trocas
             </p>
           </CardContent>
         </Card>
@@ -214,7 +214,7 @@ export default function AdminCouponsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {getCouponsByType("TROCA")}
+              {getCouponsByType(1)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Gerados por solicitações de troca

@@ -83,7 +83,7 @@ export default function OrderSuccessPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold mb-2">Número do Pedido</h3>
-                  <p className="text-2xl font-mono text-primary">{order.id}</p>
+                  <p className="text-2xl font-mono text-primary">{order?.id ?? "—"}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
@@ -92,7 +92,7 @@ export default function OrderSuccessPage() {
                     <div className="text-left">
                       <p className="font-semibold">Processamento</p>
                       <p className="text-sm text-muted-foreground">
-                        {order.tempoProcessamento || "1-2 dias úteis"}
+                        {"1-2 dias úteis"}
                       </p>
                     </div>
                   </div>
@@ -102,13 +102,13 @@ export default function OrderSuccessPage() {
                     <div className="text-left">
                       <p className="font-semibold">Entrega</p>
                       <p className="text-sm text-muted-foreground">
-                        {order.tipoEntrega || "Conforme opção selecionada"}
+                        {"Conforme opção selecionada"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {order.itens && order.itens.length > 0 && (
+                {order && order.itens && order.itens.length > 0 && (
                   <div className="mt-6">
                     <h3 className="font-semibold mb-2">Itens do Pedido</h3>
                     <ul className="space-y-2 text-sm">
@@ -117,7 +117,7 @@ export default function OrderSuccessPage() {
                           <span>
                             {item.titulo} x {item.quantidade}
                           </span>
-                          <span>R$ {item.preco_total.toFixed(2)}</span>
+                          <span>R$ {item.preco_total ?? 0 .toFixed(2)}</span>
                         </li>
                       ))}
                     </ul>

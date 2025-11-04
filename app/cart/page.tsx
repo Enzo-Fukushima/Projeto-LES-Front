@@ -32,7 +32,7 @@ export default function CartPage() {
 
       // Busca cada livro completo
       const itensComLivros = await Promise.all(
-        (cart.itens ?? []).map(async (item) => {
+        (cart.itens ?? []).map(async (item: { livroId: number; }) => {
           try {
             const livro = await livrosService.getById(item.livroId);
             console.log("Livro buscado:", livro); // log pra debug

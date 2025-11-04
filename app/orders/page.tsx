@@ -16,6 +16,7 @@ import type { TrocaDTO } from "@/services/TrocaService";
 interface PedidoComTroca extends PedidoDTO {
   troca?: TrocaDTO;
   statusExibicao?: string;
+  dataCriacao?: string;
 }
 
 export default function OrdersPage() {
@@ -318,7 +319,7 @@ export default function OrdersPage() {
                             </div>
                             <div className="text-right">
                               <p className="font-medium">
-                                {formatPrice(item.subtotal)}
+                                {formatPrice(item.subtotal || 0)}
                               </p>
                               <p className="text-sm text-muted-foreground">
                                 {formatPrice(item.precoUnitario)} cada

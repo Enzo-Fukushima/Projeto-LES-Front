@@ -139,10 +139,7 @@ export default function ProfilePage() {
               <CardTitle>Gerenciar Endereços</CardTitle>
             </CardHeader>
             <CardContent>
-              <AddressManagement
-                userId={user.id}
-                addresses={addresses}
-              />
+              <AddressManagement userId={user.id} />
             </CardContent>
           </Card>
         </TabsContent>

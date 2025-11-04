@@ -27,10 +27,9 @@ export function CartItemComponent({
   const autor = livro?.autor ?? item.autor ?? "Autor não informado";
 
   // Aqui puxamos editora como string diretamente do objeto do livro
-  const editora =
-    livro?.editora?.nome ?? item.editora ?? "Editora não informada";
 
-  const imagemUrl = livro?.imagem_url ?? item.imagemUrl ?? "/placeholder.svg";
+
+  const imagemUrl = livro?.imagemUrl ?? item.imagemUrl ?? "/placeholder.svg";
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-BR", {

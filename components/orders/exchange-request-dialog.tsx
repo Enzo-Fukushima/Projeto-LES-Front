@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
 import { pedidosService } from "@/services/PedidosService";
-import { livrosService } from "@/services/livrosService";
+import { livrosService } from "@/services/LivrosService";
 import { trocasService, TrocaItemDTO } from "@/services/TrocaService";
 import type { PedidoDTO } from "@/lib/types";
 
@@ -274,7 +274,7 @@ export function ExchangeRequestDialog({
                 const item = itemsSelection[pedidoItem.id];
                 if (!item) return null;
 
-                const livroId = pedidoItem.livroId || pedidoItem.livro?.id;
+                const livroId = pedidoItem.livroId ;
                 const book = books[livroId];
                 const isSelected = item.selected;
                 const titulo = pedidoItem.titulo || book?.titulo || "Título não disponível";
