@@ -152,7 +152,7 @@ export default function AdminCouponsPage() {
 
   const getTotalValue = () =>
     coupons
-      .filter((c) => c.ativo && (!c.dataValidade || !isExpired(c.dataValidade)))
+      .filter((c) => c.ativo && (!c.dataValidade || !isExpired(c.dataValidade)) && !c.percentual)
       .reduce((sum, c) => sum + c.valor, 0);
 
   if (loading) {
