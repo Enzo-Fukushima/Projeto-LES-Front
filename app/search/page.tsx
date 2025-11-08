@@ -12,7 +12,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import type { Livro } from "@/lib/types";
-import { livrosService } from "@/services/livrosService"; // Serviço que consome API real
+import { livrosService } from "@/services/LivrosService"; // Serviço que consome API real
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -39,7 +39,7 @@ export default function SearchPage() {
         }
 
         if (selectedCategory && query) {
-          books = books.filter((b) => b.categoria_id === selectedCategory);
+          books = books.filter((b) => b.categoriaIds.includes(Number(selectedCategory)));
         }
 
         setSearchResults(books);
