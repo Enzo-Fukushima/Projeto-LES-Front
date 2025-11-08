@@ -50,16 +50,33 @@ export function CouponApplication({
       console.log(" [COMPONENT] Iniciando validação do cupom:", couponCode);
       console.log(" [COMPONENT] Total amount:", totalAmount);
 
-      const coupon = await cupomService.validate(couponCode);
+      const couponRaw = await cupomService.validate(couponCode);
 
-      console.log(" [COMPONENT] Cupom recebido do serviço:", coupon);
-      console.log(" [COMPONENT] Propriedades do cupom:", {
-        ativo: coupon.ativo,
-        valorMinimo: coupon.valorMinimo,
-        tipo: typeof coupon.ativo,
+      console.log(" [COMPONENT] Cupom recebido do serviço:", couponRaw);
+      console.log(" [COMPONENT] Propriedades do cupom (raw):", {
+        ativo: couponRaw.ativo,
+        valorMinimo: couponRaw.valorMinimo,
+        tipo: typeof couponRaw.tipo,
         temValorMinimo:
-          coupon.valorMinimo !== undefined && coupon.valorMinimo !== null,
+          couponRaw.valorMinimo !== undefined && couponRaw.valorMinimo !== null,
       });
+
+      // Normalize the returned object to match CouponDTO (ensure correct types)
+      const coupon: CouponDTO = {
+        id: Number(couponRaw.id),
+        codigo: String(couponRaw.codigo).toUpperCase(),
+        ativo: Boolean(couponRaw.ativo),
+        percentual: Boolean(couponRaw.percentual),
+        valor: Number(couponRaw.valor),
+        tipo:
+          couponRaw.tipo !== undefined && couponRaw.tipo !== null
+            ? String(couponRaw.tipo)
+            : "",
+        valorMinimo:
+          couponRaw.valorMinimo !== undefined && couponRaw.valorMinimo !== null
+            ? Number(couponRaw.valorMinimo)
+            : undefined,
+      };
 
       // Validação: cupom ativo
       if (!coupon.ativo) {
