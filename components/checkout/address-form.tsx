@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { EnderecoDTO } from "@/lib/types";
 import { enderecoService } from "@/services/EnderecoService";
 import { validateCEP, formatCEP } from "@/lib/utils/shipping";
+import type { CreateEnderecoDTO } from "@/lib/types";
 
 interface AddressFormProps {
   address?: EnderecoDTO;
@@ -38,11 +39,11 @@ export function AddressForm({
     tipoResidencia: address?.tipoResidencia || "CASA", // novo campo
     tipoLogradouro: address?.tipoLogradouro || "RUA", // movido para o topo
     logradouro: address?.logradouro || "",
-    numero: address?.numero || "",
+    numero: address?.numero ? Number(address.numero) : 0,
     apelido: address?.apelido || "",
     bairro: address?.bairro || "",
     cidade: address?.cidade || "",
-    estado: address?.estado || "",
+    estado: address?.estado || "SP",
     cep: address?.cep || "",
     pais: address?.pais || "Brasil",
   });
@@ -328,13 +329,11 @@ export function AddressForm({
           {/* Endereço principal */}
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="principal"
-              checked={formData.principal}
-              onCheckedChange={(checked) =>
-                handleChange("principal", checked as boolean)
-              }
+              id="endereco_principal"
+              checked={address?.enderecoPrincipal || false}
+              disabled
             />
-            <Label htmlFor="principal">Definir como endereço principal</Label>
+            <Label htmlFor="endereco_principal">Endereço Principal</Label>
           </div>
 
           {/* Botões */}
