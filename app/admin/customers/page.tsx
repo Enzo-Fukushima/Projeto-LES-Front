@@ -22,7 +22,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true)
-      const response = await clientesService.list()
+      const response = await clientesService.list() as { data: Cliente[] } | Cliente[]
       const clientes = Array.isArray(response) ? response : response.data
 
       // Montar telefone
@@ -135,7 +135,7 @@ export default function CustomersPage() {
                   <TableCell className="font-mono text-sm">{customer.id}</TableCell>
                   <TableCell className="font-medium">{customer.nome}</TableCell>
                   <TableCell>{customer.email}</TableCell>
-                  <TableCell>{formatPhone(customer.telefone)}</TableCell>
+                  <TableCell>{formatPhone(customer.numeroTelefone)}</TableCell>
                   <TableCell>
                     <Badge variant={customer.ativo ? "default" : "secondary"}>
                       {customer.ativo ? "Ativo" : "Inativo"}
