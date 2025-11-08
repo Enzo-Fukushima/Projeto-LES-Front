@@ -72,6 +72,20 @@ export interface Cliente {
   senha?: string;
 }
 
+export interface CreateEnderecoDTO{
+  tipoResidencia: TipoResidencia;
+  tipoLogradouro: TipoLogradouro;
+  tipoEndereco: TipoEndereco;
+  apelido: string;
+  logradouro: string;
+  numero: number;
+  bairro: string;
+  cep: string;
+  cidade: string;
+  estado: Estado;
+  pais: string;
+}
+
 // Alias para compatibilidade
 export type User = Cliente;
 

@@ -204,43 +204,50 @@ export function RegisterForm() {
       return;
     }
 
-    try {
+  try {
       const payload = {
-        nome: formData.nome,
-        cpf: formData.cpf.replace(/\D/g, ""),
-        genero: formData.genero || "OUTRO",
-        dataNascimento: formData.data_nascimento,
-        email: formData.email,
-        senha: formData.senha,
-        tipoTelefone: "CELULAR",
-        ddd: formData.telefone.replace(/\D/g, "").slice(0, 2),
-        numeroTelefone: formData.telefone.replace(/\D/g, "").slice(2),
-        enderecos: [
-          {
-            ...formData.endereco_cobranca,
-            tipoEndereco: "COBRANCA",
-            apelido: formData.endereco_cobranca.apelido || "-",
-            estado: formData.endereco_cobranca.estado.toUpperCase(),
-          },
-          {
-            ...(formData.mesmo_endereco
-              ? formData.endereco_cobranca
-              : formData.endereco_entrega),
-            tipoEndereco: "ENTREGA",
-            apelido:
-              (formData.mesmo_endereco
-                ? formData.endereco_cobranca.apelido
-                : formData.endereco_entrega.apelido) || "-",
-            estado: (formData.mesmo_endereco
-              ? formData.endereco_cobranca.estado
-              : formData.endereco_entrega.estado
-            ).toUpperCase(),
-          },
-        ],
-      };
+  nome: formData.nome,
+  cpf: formData.cpf.replace(/\D/g, ""),
+  genero: formData.genero as "MASCULINO" | "FEMININO" | "OUTRO",
+  dataNascimento: formData.data_nascimento,
+  email: formData.email,
+  senha: formData.senha,
+  tipoTelefone: "CELULAR",
+  ddd: formData.telefone.replace(/\D/g, "").slice(0, 2),
+  numeroTelefone: formData.telefone.replace(/\D/g, "").slice(2),
+  enderecos: [
+    {
+      apelido: formData.endereco_cobranca.apelido || "CASA",
+      tipoResidencia: formData.endereco_cobranca.tipoResidencia?.toUpperCase(),
+      tipoLogradouro: formData.endereco_cobranca.tipoLogradouro?.toUpperCase(),
+      tipoEndereco: "COBRANCA",
+      logradouro: formData.endereco_cobranca.logradouro,
+      numero: parseInt(formData.endereco_cobranca.numero, 10),
+      bairro: formData.endereco_cobranca.bairro,
+      cep: formData.endereco_cobranca.cep.replace(/\D/g, ""),
+      cidade: formData.endereco_cobranca.cidade,
+      estado: formData.endereco_cobranca.estado?.toUpperCase(),
+      pais: formData.endereco_cobranca.pais,
+    },
+    {
+      apelido: formData.endereco_entrega.apelido || "ENTREGA",
+      tipoResidencia: formData.endereco_entrega.tipoResidencia?.toUpperCase(),
+      tipoLogradouro: formData.endereco_entrega.tipoLogradouro?.toUpperCase(),
+      tipoEndereco: "ENTREGA",
+      logradouro: formData.endereco_entrega.logradouro,
+      numero: parseInt(formData.endereco_entrega.numero, 10),
+      bairro: formData.endereco_entrega.bairro,
+      cep: formData.endereco_entrega.cep.replace(/\D/g, ""),
+      cidade: formData.endereco_entrega.cidade,
+      estado: formData.endereco_entrega.estado?.toUpperCase(),
+      pais: formData.endereco_entrega.pais,
+    },
+  ],
+};
+
       console.log("Payload para registro:", payload); // Log do payload
 
-      await clientesService.create(payload);
+      await clientesService.create(payload as any);
       router.push("/");
     } catch {
       setErrors(["Erro ao criar conta. Tente novamente."]);

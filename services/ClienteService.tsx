@@ -43,7 +43,7 @@ export const clientesService = {
         dataNascimento:
           userData.dataNascimento ?? new Date().toISOString().split("T")[0],
         email: userData.email ?? "",
-        senha: userData.senha_hash ?? "",
+        senha: userData.senha ?? "",
         tipoTelefone: userData.tipoTelefone ?? "CELULAR",
         ddd: userData.ddd ?? "11",
         numeroTelefone: userData.numeroTelefone ?? "",
@@ -52,16 +52,16 @@ export const clientesService = {
         enderecos:
           userData.enderecos?.map<CreateEnderecoDTO>((e) => ({
             tipoEndereco: e.tipoEndereco ?? "ENTREGA",
+            tipoResidencia: e.tipoResidencia ?? "CASA",
+            tipoLogradouro: e.tipoLogradouro ?? "RUA",
             logradouro: e.logradouro,
             numero: e.numero,
-            complemento: e.complemento,
+            apelido: e.apelido,
             bairro: e.bairro,
             cidade: e.cidade,
             estado: e.estado,
             cep: e.cep,
             pais: e.pais ?? "Brasil",
-            principal: e.principal ?? false,
-            user_id: e.user_id ?? 0, // precisa ser definido corretamente antes do envio
           })) ?? [],
       };
 
