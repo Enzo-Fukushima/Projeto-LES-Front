@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAuth } from "@/contexts/auth-context"
-import { recommendationEngine } from "@/lib/ai-recommendations"
-import { MessageCircle, Send, Bot, User, Minimize2, Maximize2 } from "lucide-react"
+import { chatApiService, type LivroDTO, type ChatMessage } from "@/services/GeminiApi.service"
+import { MessageCircle, Send, Bot, User, Minimize2, Maximize2, Book } from "lucide-react"
 
 interface Message {
   id: string
@@ -33,16 +33,17 @@ export function AIChatbot() {
   ])
   const [inputMessage, setInputMessage] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [livrosRecomendados, setLivrosRecomendados] = useState<LivroDTO[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages, livrosRecomendados])
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return
+    if (!inputMessage.trim() || !user?.id) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -56,17 +57,31 @@ export function AIChatbot() {
     setIsTyping(true)
 
     try {
-      const response = await recommendationEngine.getChatbotResponse(inputMessage, user?.id)
+      // Converte mensagens para o formato da API (ChatMessage[])
+      const historico: ChatMessage[] = [...messages, userMessage].map((msg) => ({
+        role: msg.sender === "user" ? "user" : "assistant",
+        content: msg.content,
+      }))
 
+      // Chama o serviço da API
+      const response = await chatApiService.enviarMensagem(user.id, historico)
+
+      // Adiciona a resposta da IA às mensagens
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response,
+        content: response.respostaIA.content,
         sender: "bot",
         timestamp: new Date(),
       }
 
       setMessages((prev) => [...prev, botMessage])
+
+      // Atualiza os livros recomendados se houver
+      if (response.livrosRecomendados && response.livrosRecomendados.length > 0) {
+        setLivrosRecomendados(response.livrosRecomendados)
+      }
     } catch (error) {
+      console.error("Erro ao enviar mensagem:", error)
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "Desculpe, ocorreu um erro. Tente novamente em alguns instantes.",
@@ -103,7 +118,7 @@ export function AIChatbot() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <Card className={`w-96 shadow-xl transition-all duration-300 ${isMinimized ? "h-16" : "h-[500px]"}`}>
+      <Card className={`w-[450px] shadow-xl transition-all duration-300 ${isMinimized ? "h-16" : "h-[600px]"}`}>
         <CardHeader
           className="flex flex-row items-center justify-between space-y-0 pb-2 cursor-pointer"
           onClick={() => setIsMinimized(!isMinimized)}
@@ -130,7 +145,7 @@ export function AIChatbot() {
         </CardHeader>
 
         {!isMinimized && (
-          <CardContent className="flex flex-col h-[420px] p-0">
+          <CardContent className="flex flex-col h-[520px] p-0">
             <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
               <div className="space-y-4">
                 {messages.map((message) => (
@@ -182,6 +197,49 @@ export function AIChatbot() {
                         ></div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Livros Recomendados */}
+                {livrosRecomendados.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Book className="h-4 w-4" />
+                      Livros Recomendados
+                    </div>
+                    {livrosRecomendados.map((livro) => (
+                      <div
+                        key={livro.id}
+                        className="bg-background border rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                      >
+                        <div className="flex gap-3">
+                          {livro.imagemUrl && (
+                            <img
+                              src={livro.imagemUrl}
+                              alt={livro.titulo}
+                              className="w-16 h-20 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm truncate">{livro.titulo}</h4>
+                            <p className="text-xs text-muted-foreground truncate">{livro.autor}</p>
+                            {livro.isbn && (
+                              <p className="text-xs text-muted-foreground mt-0.5">ISBN: {livro.isbn}</p>
+                            )}
+                            {livro.categoria && (
+                              <span className="inline-block mt-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                                {livro.categoria}
+                              </span>
+                            )}
+                            {livro.preco && (
+                              <p className="text-sm font-semibold mt-1 text-green-600">
+                                R$ {livro.preco.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
