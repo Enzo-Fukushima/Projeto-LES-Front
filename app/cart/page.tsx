@@ -132,6 +132,7 @@ export default function CartPage() {
             variant="outline"
             onClick={handleClearCart}
             disabled={isProcessing}
+            data-cy={"limpar"}
           >
             Limpar Carrinho
           </Button>

@@ -444,3 +444,16 @@ export interface Livro {
   categoriaIds: number[];
   imagemUrl: string;
 }
+
+export interface SalesAnalyticsDTO {
+  data: string; // Data no formato ISO
+  quantidade: number;
+  valorTotal: number;
+}
+
+export interface AnalyticsRequestDTO {
+  tipo: "PRODUTO" | "CATEGORIA";
+  id: number;
+  dataInicio: string; // formato: YYYY-MM-DD
+  dataFim: string; // formato: YYYY-MM-DD
+}
