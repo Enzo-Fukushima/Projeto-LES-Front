@@ -442,7 +442,7 @@ export interface Livro {
   estoque: number;
   peso: number;
   categoriaIds: number[];
-  imagemUrl: string;
+  imagem_url: string;
 }
 
 export interface SalesAnalyticsDTO {

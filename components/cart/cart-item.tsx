@@ -29,7 +29,7 @@ export function CartItemComponent({
   // Aqui puxamos editora como string diretamente do objeto do livro
 
 
-  const imagemUrl = livro?.imagemUrl ?? item.imagemUrl ?? "/placeholder.svg";
+  const imagem_url = livro?.imagem_url ?? item.imagemUrl ?? "/placeholder.svg";
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -48,7 +48,7 @@ export function CartItemComponent({
         <div className="flex gap-4">
           <div className="relative w-20 h-28 flex-shrink-0">
             <Image
-              src={imagemUrl}
+              src={imagem_url}
               alt={titulo}
               fill
               className="object-cover rounded"

@@ -67,7 +67,7 @@ export function ProductCard({
         <Link href={`/books/${book.id}`}>
           <div className="relative aspect-[3/4] overflow-hidden">
             <Image
-              src={book.imagemUrl || "/placeholder.svg"}
+              src={book.imagem_url || "/placeholder.svg"}
               alt={book.titulo}
               fill
               className="object-cover transition-transform group-hover:scale-105"

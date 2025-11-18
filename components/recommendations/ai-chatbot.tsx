@@ -35,12 +35,14 @@ export function AIChatbot() {
   const [isTyping, setIsTyping] = useState(false)
   const [livrosRecomendados, setLivrosRecomendados] = useState<LivroDTO[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Auto-scroll para o final quando novas mensagens chegam
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
     }
-  }, [messages, livrosRecomendados])
+  }, [messages, livrosRecomendados, isTyping])
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !user?.id) return
@@ -118,9 +120,9 @@ export function AIChatbot() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <Card className={`w-[450px] shadow-xl transition-all duration-300 ${isMinimized ? "h-16" : "h-[600px]"}`}>
+      <Card className={`w-[450px] shadow-xl transition-all duration-300 ${isMinimized ? "h-16" : "h-[600px]"} flex flex-col`}>
         <CardHeader
-          className="flex flex-row items-center justify-between space-y-0 pb-2 cursor-pointer"
+          className="flex flex-row items-center justify-between space-y-0 pb-2 cursor-pointer border-b flex-shrink-0"
           onClick={() => setIsMinimized(!isMinimized)}
         >
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -145,8 +147,9 @@ export function AIChatbot() {
         </CardHeader>
 
         {!isMinimized && (
-          <CardContent className="flex flex-col h-[520px] p-0">
-            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+          <CardContent className="flex flex-col flex-1 p-0 overflow-hidden min-h-0">
+            {/* Área de mensagens com scroll */}
+            <div className="flex-1 overflow-y-auto p-4" ref={scrollAreaRef}>
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div
@@ -242,10 +245,14 @@ export function AIChatbot() {
                     ))}
                   </div>
                 )}
-              </div>
-            </ScrollArea>
 
-            <div className="border-t p-4">
+                {/* Elemento invisível para scroll automático */}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Input fixo no rodapé */}
+            <div className="border-t p-4 flex-shrink-0 bg-background">
               <div className="flex gap-2">
                 <Input
                   value={inputMessage}
@@ -253,8 +260,9 @@ export function AIChatbot() {
                   onKeyPress={handleKeyPress}
                   placeholder="Digite sua pergunta sobre livros..."
                   disabled={isTyping}
+                  className="flex-1"
                 />
-                <Button onClick={handleSendMessage} disabled={isTyping || !inputMessage.trim()}>
+                <Button onClick={handleSendMessage} disabled={isTyping || !inputMessage.trim()} size="icon">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
