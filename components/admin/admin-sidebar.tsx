@@ -48,11 +48,7 @@ const sidebarItems = [
     href: "/admin/customers",
     icon: Users,
   },
-  {
-    title: "Relatórios",
-    href: "/admin/reports",
-    icon: BarChart3,
-  },
+  
 ]
 
 export function AdminSidebar() {
