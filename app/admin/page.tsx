@@ -12,22 +12,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Calendar, TrendingUp, Package, Layers, Loader2, AlertCircle } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Calendar,
+  TrendingUp,
+  Package,
+  Layers,
+  Loader2,
+  AlertCircle,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
 import { analyticsService } from "@/services/AnaliseService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandInput, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command";
+
 interface SalesDataPoint {
+  // dynamic keys: qty_{id}, rev_{id}
   date: string;
   displayDate: string;
-  quantity: number;
-  revenue: number;
+  [key: string]: any;
 }
 
-export default function SalesAnalyticsPage() {
+export default function AdminAnalyticsPage() {
   const [viewType, setViewType] = useState<"produto" | "categoria">("produto");
-  const [selectedProduct, setSelectedProduct] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
@@ -36,11 +57,21 @@ export default function SalesAnalyticsPage() {
   const [categories, setCategories] = useState<Array<{ id: number; nome: string }>>([]);
   const [error, setError] = useState<string>("");
 
-  // Carregar produtos e categorias
+  // Paleta de cores (rotaciona se precisar)
+  const CHART_COLORS = [
+    "#3b82f6", // azul
+    "#ef4444", // vermelho
+    "#10b981", // verde
+    "#f59e0b", // laranja
+    "#8b5cf6", // roxo
+    "#06b6d4", // cyan
+    "#f97316", // deep orange
+  ];
+
   useEffect(() => {
     loadFiltersData();
-    
-    // Definir datas padrão (últimos 30 dias)
+
+    // padrão: últimos 30 dias
     const today = new Date();
     const thirtyDaysAgo = new Date(today);
     thirtyDaysAgo.setDate(today.getDate() - 30);
@@ -57,76 +88,223 @@ export default function SalesAnalyticsPage() {
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
-    } catch (error) {
-      console.error("Erro ao carregar filtros:", error);
+    } catch (err) {
+      console.error("Erro ao carregar filtros:", err);
       setError("Erro ao carregar produtos e categorias");
     }
   };
 
+  // Helpers
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+  const getTotalQuantity = () =>
+    salesData.reduce((acc, curr) => {
+      // soma todas as qty_* chaves
+      const qtySum = Object.keys(curr)
+        .filter((k) => k.startsWith("qty_"))
+        .reduce((s, k) => s + Number(curr[k] || 0), 0);
+      return acc + qtySum;
+    }, 0);
+
+  const getTotalRevenue = () =>
+    salesData.reduce((acc, curr) => {
+      const revSum = Object.keys(curr)
+        .filter((k) => k.startsWith("rev_"))
+        .reduce((s, k) => s + Number(curr[k] || 0), 0);
+      return acc + revSum;
+    }, 0);
+
+  const getAverageTicket = () => {
+    const totalQty = getTotalQuantity();
+    const totalRev = getTotalRevenue();
+    return totalQty > 0 ? totalRev / totalQty : 0;
+  };
+
+  // MultiSelect (interno, baseado em Popover+Command)
+  function cn(...classes: Array<string | false | null | undefined>) {
+    return classes.filter(Boolean).join(" ");
+  }
+
+  interface MultiSelectProps {
+    items: { id: string | number; label: string }[];
+    selected: string[];
+    onChange: (value: string[]) => void;
+    placeholder?: string;
+  }
+
+  function MultiSelect({ items, selected, onChange, placeholder = "Selecione..." }: MultiSelectProps) {
+    const [open, setOpen] = useState(false);
+
+    const toggle = (id: string) => {
+      if (selected.includes(id)) onChange(selected.filter((s) => s !== id));
+      else onChange([...selected, id]);
+    };
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" role="combobox" className="w-full justify-between">
+            {selected.length > 0 ? `${selected.length} selecionado(s)` : placeholder}
+            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput placeholder="Buscar..." className="h-9" />
+            <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+            <CommandGroup>
+              {items.map((item) => (
+                <CommandItem key={item.id} value={String(item.label)} onSelect={() => toggle(String(item.id))}>
+                  <Check className={cn("mr-2 h-4 w-4", selected.includes(String(item.id)) ? "opacity-100" : "opacity-0")} />
+                  {item.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  /**
+   * Monta o salesData para Recharts:
+   * - Para cada dia entre startDate e endDate cria um objeto com displayDate e chaves qty_{id}, rev_{id}
+   * - results: array de arrays (cada item: SalesAnalyticsDTO[])
+   * - ids: array de ids que correspondem à mesma ordem de results
+   */
+  const buildMultiSeriesData = (
+    results: Array<Array<{ data: string; quantidade: number; valorTotal: number }>>,
+    ids: number[],
+    labels: string[]
+  ) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // criar mapa: date -> { qty_{id}: number, rev_{id}: number }
+    const dateMap = new Map<string, Record<string, number>>();
+
+    // inicialmente preenche o mapa com zeros no intervalo
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      const key = cursor.toISOString().split("T")[0];
+      dateMap.set(key, {}); // preenchido depois
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    // Para cada result (correspondente a um id), preencher mapa
+    results.forEach((arr, idx) => {
+      const id = ids[idx];
+      const qtyKey = `qty_${id}`;
+      const revKey = `rev_${id}`;
+
+      // transformar arr em mapa local data->values
+      const local = new Map<string, { q: number; r: number }>();
+      arr.forEach((it) => {
+        local.set(it.data, {
+          q: Number(it.quantidade ?? 0),
+          r: Number(it.valorTotal ?? 0),
+        });
+      });
+
+      // percorrer todas as datas do dateMap e setar valores (0 quando não há)
+      for (const [dateKey] of dateMap) {
+        const existing = dateMap.get(dateKey) || {};
+        const localVal = local.get(dateKey);
+        existing[qtyKey] = localVal ? localVal.q : 0;
+        existing[revKey] = localVal ? localVal.r : 0;
+        dateMap.set(dateKey, existing);
+      }
+    });
+
+    // construir array final ordenado
+    const final: SalesDataPoint[] = [];
+    Array.from(dateMap.keys())
+      .sort()
+      .forEach((dateKey) => {
+        const entry = dateMap.get(dateKey) || {};
+        final.push({
+          date: dateKey,
+          displayDate: new Date(dateKey).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+          ...entry,
+        });
+      });
+
+    return final;
+  };
+
   const loadSalesData = async () => {
+    setError("");
     if (!startDate || !endDate) {
       setError("Por favor, selecione as datas");
       return;
     }
 
-    if (viewType === "produto" && !selectedProduct) {
-      setError("Por favor, selecione um produto");
-      return;
-    }
-
-    if (viewType === "categoria" && !selectedCategory) {
-      setError("Por favor, selecione uma categoria");
+    const ids = viewType === "produto" ? selectedProducts.map(Number) : selectedCategories.map(Number);
+    if (!ids.length) {
+      setError(`Por favor, selecione pelo menos ${viewType === "produto" ? "um produto" : "uma categoria"}`);
       return;
     }
 
     setIsLoading(true);
-    setError("");
-
     try {
-      const data = await analyticsService.getSalesData({
-        tipo: viewType === "produto" ? "PRODUTO" : "CATEGORIA",
-        id: Number(viewType === "produto" ? selectedProduct : selectedCategory),
-        dataInicio: startDate,
-        dataFim: endDate,
+      // efetua uma chamada por id
+      const promises = ids.map((id) =>
+        analyticsService.getSalesData({
+          tipo: viewType === "produto" ? "PRODUTO" : "CATEGORIA",
+          id,
+          dataInicio: startDate,
+          dataFim: endDate,
+        })
+      );
+
+      const results = await Promise.all(promises); // Array<SalesAnalyticsDTO[]>
+
+      // labels: buscar nome dos ids nas listas carregadas
+      const labels = ids.map((id) => {
+        if (viewType === "produto") {
+          const p = products.find((x) => x.id === id);
+          return p ? p.nome : `Produto ${id}`;
+        } else {
+          const c = categories.find((x) => x.id === id);
+          return c ? c.nome : `Categoria ${id}`;
+        }
       });
 
-      // Transformar dados da API para o formato do gráfico
-      const chartData: SalesDataPoint[] = data.map((item) => ({
-        date: item.data,
-        displayDate: new Date(item.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-        quantity: item.quantidade,
-        revenue: item.valorTotal,
-      }));
-
-      setSalesData(chartData);
-    } catch (error) {
-      console.error("Erro ao carregar dados de vendas:", error);
+      const combined = buildMultiSeriesData(results as any, ids, labels);
+      setSalesData(combined);
+    } catch (err) {
+      console.error("Erro ao carregar dados de vendas:", err);
       setError("Erro ao carregar dados de vendas. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
+  // Preparar configurações de linhas para renderizar dinamicamente
+  const prepareSeriesConfig = () => {
+    const ids = viewType === "produto" ? selectedProducts.map(Number) : selectedCategories.map(Number);
+    const labels = ids.map((id) => {
+      if (viewType === "produto") {
+        const p = products.find((x) => x.id === id);
+        return p ? p.nome : `Produto ${id}`;
+      } else {
+        const c = categories.find((x) => x.id === id);
+        return c ? c.nome : `Categoria ${id}`;
+      }
+    });
+
+    return ids.map((id, idx) => ({
+      id,
+      label: labels[idx],
+      color: CHART_COLORS[idx % CHART_COLORS.length],
+      qtyKey: `qty_${id}`,
+      revKey: `rev_${id}`,
+    }));
   };
 
-  const getTotalQuantity = () => {
-    return salesData.reduce((acc, curr) => acc + curr.quantity, 0);
-  };
-
-  const getTotalRevenue = () => {
-    return salesData.reduce((acc, curr) => acc + curr.revenue, 0);
-  };
-
-  const getAverageTicket = () => {
-    const totalQuantity = getTotalQuantity();
-    const totalRevenue = getTotalRevenue();
-    return totalQuantity > 0 ? totalRevenue / totalQuantity : 0;
-  };
+  const seriesConfig = prepareSeriesConfig();
 
   return (
     <div className="space-y-6">
@@ -137,7 +315,6 @@ export default function SalesAnalyticsPage() {
         </p>
       </div>
 
-      {/* Mensagem de Erro */}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -145,30 +322,19 @@ export default function SalesAnalyticsPage() {
         </Alert>
       )}
 
-      {/* Mensagem de Erro */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Filtros */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Filtros de Análise
           </CardTitle>
-          <CardDescription>
-            Selecione o tipo de análise, período e produto/categoria
-          </CardDescription>
+          <CardDescription>Selecione o tipo de análise, período e produto/categoria</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="viewType">Tipo de Análise</Label>
-              <Select value={viewType} onValueChange={(value: "produto" | "categoria") => setViewType(value)}>
+              <Select value={viewType} onValueChange={(v: "produto" | "categoria") => setViewType(v)}>
                 <SelectTrigger id="viewType">
                   <SelectValue />
                 </SelectTrigger>
@@ -191,58 +357,34 @@ export default function SalesAnalyticsPage() {
 
             {viewType === "produto" ? (
               <div className="space-y-2">
-                <Label htmlFor="product">Produto</Label>
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                  <SelectTrigger id="product">
-                    <SelectValue placeholder="Selecione um produto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((product) => (
-                      <SelectItem key={product.id} value={product.id.toString()}>
-                        {product.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Produtos</Label>
+                <MultiSelect
+                  items={products.map((p) => ({ id: p.id, label: p.nome }))}
+                  selected={selectedProducts}
+                  onChange={setSelectedProducts}
+                  placeholder="Selecione os produtos"
+                />
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="category">Categoria</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>
-                        {category.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Categorias</Label>
+                <MultiSelect
+                  items={categories.map((c) => ({ id: c.id, label: c.nome }))}
+                  selected={selectedCategories}
+                  onChange={setSelectedCategories}
+                  placeholder="Selecione as categorias"
+                />
               </div>
             )}
 
             <div className="space-y-2">
               <Label htmlFor="startDate">Data Inicial</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                max={endDate || undefined}
-              />
+              <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} max={endDate || undefined} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="endDate">Data Final</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || undefined}
-              />
+              <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate || undefined} />
             </div>
           </div>
 
@@ -253,8 +395,8 @@ export default function SalesAnalyticsPage() {
                 isLoading ||
                 !startDate ||
                 !endDate ||
-                (viewType === "produto" && !selectedProduct) ||
-                (viewType === "categoria" && !selectedCategory)
+                (viewType === "produto" && selectedProducts.length === 0) ||
+                (viewType === "categoria" && selectedCategories.length === 0)
               }
               className="w-full md:w-auto"
             >
@@ -274,7 +416,7 @@ export default function SalesAnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Métricas Resumidas */}
+      {/* Métricas */}
       {salesData.length > 0 && (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
@@ -312,38 +454,27 @@ export default function SalesAnalyticsPage() {
         </div>
       )}
 
-      {/* Gráfico de Linhas */}
+      {/* Gráficos */}
       {salesData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>
-              Volume de Vendas - {viewType === "produto" ? "Produto" : "Categoria"}
-            </CardTitle>
+            <CardTitle>Volume de Vendas - {viewType === "produto" ? "Produto" : "Categoria"}</CardTitle>
             <CardDescription>
               Análise de {startDate && new Date(startDate).toLocaleDateString("pt-BR")} até{" "}
               {endDate && new Date(endDate).toLocaleDateString("pt-BR")}
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <div className="space-y-6">
-              {/* Gráfico de Quantidade */}
+              {/* Quantidade por item */}
               <div>
                 <h4 className="text-sm font-medium mb-3">Quantidade Vendida</h4>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={salesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis
-                      dataKey="displayDate"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
+                    <XAxis dataKey="displayDate" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "hsl(var(--background))",
@@ -353,31 +484,29 @@ export default function SalesAnalyticsPage() {
                       labelStyle={{ color: "hsl(var(--foreground))" }}
                     />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="quantity"
-                      name="Quantidade"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      dot={{ fill: "hsl(var(--primary))" }}
-                      activeDot={{ r: 6 }}
-                    />
+                    {seriesConfig.map((s) => (
+                      <Line
+                        key={s.qtyKey}
+                        type="monotone"
+                        dataKey={s.qtyKey}
+                        name={s.label}
+                        stroke={s.color}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Gráfico de Receita */}
+              {/* Receita por item */}
               <div>
                 <h4 className="text-sm font-medium mb-3">Receita</h4>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={salesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis
-                      dataKey="displayDate"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                    />
+                    <XAxis dataKey="displayDate" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} />
                     <YAxis
                       stroke="hsl(var(--muted-foreground))"
                       fontSize={12}
@@ -395,15 +524,18 @@ export default function SalesAnalyticsPage() {
                       formatter={(value: number) => [formatCurrency(value), "Receita"]}
                     />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="revenue"
-                      name="Receita"
-                      stroke="hsl(142.1 76.2% 36.3%)"
-                      strokeWidth={2}
-                      dot={{ fill: "hsl(142.1 76.2% 36.3%)" }}
-                      activeDot={{ r: 6 }}
-                    />
+                    {seriesConfig.map((s) => (
+                      <Line
+                        key={s.revKey}
+                        type="monotone"
+                        dataKey={s.revKey}
+                        name={s.label}
+                        stroke={s.color}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    ))}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -419,8 +551,7 @@ export default function SalesAnalyticsPage() {
             <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum dado para exibir</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md">
-              Selecione um {viewType === "produto" ? "produto" : "categoria"}, defina o período e clique em
-              "Gerar Análise" para visualizar os dados de vendas.
+              Selecione um {viewType === "produto" ? "produto" : "categoria"}, defina o período e clique em "Gerar Análise" para visualizar os dados de vendas.
             </p>
           </CardContent>
         </Card>
